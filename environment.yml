@@ -78,3 +78,7 @@ dependencies:
       
       # Video rendering (headless for Docker/server environments)
       - opencv-python-headless>=4.8.0
+      
+      # GPU-accelerated rendering
+      - moderngl>=5.8.0
+      - moderngl-window>=2.4.0

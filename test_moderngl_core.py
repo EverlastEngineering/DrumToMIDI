@@ -210,3 +210,83 @@ class TestLaneCalculations:
         tom_width = get_note_width_for_type('tom')
         
         assert hihat_width == snare_width == tom_width
+
+
+class TestStrikeLineAndMarkers:
+    """Test pure functions for strike line and lane marker generation"""
+    
+    def test_create_strike_line(self):
+        """Should create strike line rectangle specification"""
+        from moderngl_core import create_strike_line
+        
+        strike_line = create_strike_line(
+            y_position=0.7,
+            color=(1.0, 1.0, 1.0),
+            thickness=0.01
+        )
+        
+        # Should span full screen width
+        assert strike_line['x'] == pytest.approx(-1.0)
+        assert strike_line['width'] == pytest.approx(2.0)
+        
+        # Should be at correct position with correct thickness
+        assert strike_line['y'] == pytest.approx(0.7)
+        assert strike_line['height'] == pytest.approx(0.01)
+        
+        # Should have correct color and full brightness
+        assert strike_line['color'] == (1.0, 1.0, 1.0)
+        assert strike_line['brightness'] == 1.0
+    
+    def test_create_lane_markers(self):
+        """Should create lane divider rectangles"""
+        from moderngl_core import create_lane_markers
+        
+        lanes = ['hihat', 'snare', 'kick', 'tom']
+        markers = create_lane_markers(
+            lanes=lanes,
+            color=(0.3, 0.3, 0.3),
+            thickness=0.005
+        )
+        
+        # Should have one less marker than lanes (dividers between lanes)
+        assert len(markers) == 3
+        
+        # All markers should be vertical (tall)
+        for marker in markers:
+            assert marker['height'] == pytest.approx(2.0)  # Full screen height
+            assert marker['width'] == pytest.approx(0.005)  # Thin divider
+        
+        # All markers should have same color
+        for marker in markers:
+            assert marker['color'] == (0.3, 0.3, 0.3)
+            assert marker['brightness'] == 1.0
+    
+    def test_create_background_lanes(self):
+        """Should create background rectangles for each lane"""
+        from moderngl_core import create_background_lanes
+        
+        lanes = ['hihat', 'snare', 'kick', 'tom']
+        backgrounds = create_background_lanes(
+            lanes=lanes,
+            colors={
+                'hihat': (0.0, 0.1, 0.1),
+                'snare': (0.1, 0.0, 0.0),
+                'kick': (0.1, 0.05, 0.0),
+                'tom': (0.0, 0.1, 0.0)
+            }
+        )
+        
+        # Should have one background per lane
+        assert len(backgrounds) == 4
+        
+        # All backgrounds should be full screen height
+        for bg in backgrounds:
+            assert bg['height'] == pytest.approx(2.0)
+        
+        # Each should have distinct color
+        colors = [bg['color'] for bg in backgrounds]
+        assert len(set(colors)) == 4  # All unique
+        
+        # Background should have low brightness
+        for bg in backgrounds:
+            assert bg['brightness'] == pytest.approx(0.3)

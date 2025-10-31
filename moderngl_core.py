@@ -257,3 +257,111 @@ def get_note_height() -> float:
         Height in normalized coordinates
     """
     return 0.06
+
+
+# ============================================================================
+# Strike Line and Lane Markers
+# ============================================================================
+
+def create_strike_line(
+    y_position: float, 
+    color: Tuple[float, float, float] = (1.0, 1.0, 1.0),
+    thickness: float = 0.01
+) -> Dict[str, Any]:
+    """Create strike line rectangle specification
+    
+    Args:
+        y_position: Y coordinate of strike line (normalized coords)
+        color: RGB color tuple
+        thickness: Line thickness (normalized coords)
+    
+    Returns:
+        Rectangle specification dict
+    """
+    return {
+        'x': -1.0,  # Left edge of screen
+        'y': y_position,
+        'width': 2.0,  # Full screen width
+        'height': thickness,
+        'color': color,
+        'brightness': 1.0
+    }
+
+
+def create_lane_markers(
+    lanes: List[str],
+    color: Tuple[float, float, float] = (0.3, 0.3, 0.3),
+    thickness: float = 0.005
+) -> List[Dict[str, Any]]:
+    """Create lane divider markers
+    
+    Args:
+        lanes: List of lane names
+        color: RGB color for dividers
+        thickness: Divider thickness (normalized coords)
+    
+    Returns:
+        List of rectangle specifications for dividers
+    """
+    if len(lanes) <= 1:
+        return []
+    
+    markers = []
+    
+    # Create dividers between lanes
+    for i in range(len(lanes) - 1):
+        # Get X positions of adjacent lanes
+        x1 = get_lane_x_position(lanes[i], lanes)
+        x2 = get_lane_x_position(lanes[i + 1], lanes)
+        
+        # Place divider between them
+        divider_x = (x1 + x2) / 2.0 - (thickness / 2.0)
+        
+        markers.append({
+            'x': divider_x,
+            'y': 1.0,  # Top of screen
+            'width': thickness,
+            'height': 2.0,  # Full screen height
+            'color': color,
+            'brightness': 1.0
+        })
+    
+    return markers
+
+
+def create_background_lanes(
+    lanes: List[str],
+    colors: Dict[str, Tuple[float, float, float]],
+    brightness: float = 0.3
+) -> List[Dict[str, Any]]:
+    """Create background rectangles for each lane
+    
+    Args:
+        lanes: List of lane names
+        colors: Dictionary mapping lane name to RGB color
+        brightness: Brightness multiplier for backgrounds
+    
+    Returns:
+        List of rectangle specifications for lane backgrounds
+    """
+    backgrounds = []
+    
+    # Calculate lane width
+    num_lanes = len(lanes)
+    total_width = 1.6  # Same as in get_lane_x_position
+    lane_width = total_width / num_lanes
+    
+    for lane in lanes:
+        lane_center_x = get_lane_x_position(lane, lanes)
+        lane_left_x = lane_center_x - (lane_width / 2.0)
+        
+        backgrounds.append({
+            'x': lane_left_x,
+            'y': 1.0,  # Top of screen
+            'width': lane_width,
+            'height': 2.0,  # Full screen height
+            'color': colors.get(lane, (0.1, 0.1, 0.1)),
+            'brightness': brightness
+        })
+    
+    return backgrounds

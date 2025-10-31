@@ -32,23 +32,24 @@
 - [x] Add alpha transparency support for layering
 - [x] Render kick drum bars (wider rectangles)
 - [x] Refactor to functional core / imperative shell architecture
-- [ ] Render strike line and lane markers
-- [ ] Implement camera/viewport transformations
+- [x] Render strike line and lane markers
+- [ ] Implement camera/viewport transformations (deferred to Phase 3)
 
-**Status**: 🟡 IN PROGRESS (Architecture refactored, core features complete)  
+**Status**: ✅ COMPLETED  
 **Metrics**: 
-- 10 notes rendered in single draw call (instanced rendering)
+- 20 elements rendered in single draw call (4 backgrounds, 3 dividers, 1 strike line, 12 notes)
 - Rounded corners with 1-pixel anti-aliasing
-- Brightness modulation working (0.4-1.0 tested)
+- Brightness modulation working (0.3-1.0 tested)
 - Different sizes for kick vs other drums validated
-- 10/10 tests passing for functional core
+- 13/13 tests passing for functional core
 - Automatic GPU resource management via context manager
 **Notes**: 
 - Successfully separated pure functions (moderngl_core.py) from GPU operations (moderngl_shell.py)
 - High-level API (`render_frame_to_file`) simplifies usage
-- Context manager ensures proper GPU cleanup
+- Strike line and lane markers implemented with full test coverage
+- Lane backgrounds provide visual separation
 - All core calculations now testable without GPU
-- Ready for strike line/lane markers, then move to Phase 3
+- Ready for Phase 3: Animation and effects
 
 ---
 

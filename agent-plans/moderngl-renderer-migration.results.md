@@ -26,17 +26,25 @@
 ---
 
 ### Phase 2: Core Geometry Rendering
-- [ ] Implement rounded rectangle shader with anti-aliasing
-- [ ] Batch render multiple notes in single draw call
-- [ ] Implement velocity-based brightness calculation
-- [ ] Add alpha transparency support for layering
-- [ ] Render kick drum bars (wider rectangles)
+- [x] Implement rounded rectangle shader with anti-aliasing
+- [x] Batch render multiple notes in single draw call
+- [x] Implement velocity-based brightness calculation
+- [x] Add alpha transparency support for layering
+- [x] Render kick drum bars (wider rectangles)
 - [ ] Render strike line and lane markers
 - [ ] Implement camera/viewport transformations
 
-**Status**: Not Started  
-**Metrics**: N/A  
-**Notes**: N/A
+**Status**: 🟡 IN PROGRESS (Core features complete)  
+**Metrics**: 
+- 10 notes rendered in single draw call (instanced rendering)
+- Rounded corners with 1-pixel anti-aliasing
+- Brightness modulation working (0.4-1.0 tested)
+- Different sizes for kick vs other drums validated
+**Notes**: 
+- Distance-based rounded corner algorithm working perfectly
+- smoothstep provides excellent anti-aliasing
+- Instanced rendering dramatically reduces draw calls
+- Ready for strike line/lane markers, then move to Phase 3
 
 ---
 

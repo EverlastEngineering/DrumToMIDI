@@ -94,6 +94,16 @@
   - No display/window required
 - **Next Steps**: Implement rounded rectangle shader and note batching (Phase 2)
 
+### 2025-10-31: Architecture Refactor - Functional Core/Imperative Shell
+- **Decision**: Refactor POC code to separate pure functions from side effects
+- **Rationale**: Enable testing, improve maintainability, follow project conventions
+- **Outcome**:
+  - Created `moderngl_core.py` with pure functions (no GPU operations)
+  - Created `test_moderngl_core.py` with comprehensive test coverage
+  - All 10 tests passing (color transforms, coordinate conversions, note positioning)
+  - Functions are testable without GPU context
+- **Next Steps**: Create `moderngl_shell.py` for GPU operations, complete Phase 2
+
 ---
 
 ## Performance Metrics

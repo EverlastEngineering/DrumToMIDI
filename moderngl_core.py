@@ -159,9 +159,10 @@ def calculate_note_y_position(
     Returns:
         Y position in normalized coordinates
     """
-    # Distance = speed * time
-    # Negative time means note has passed strike line (continues falling)
-    distance_from_strike = -time_until_hit * fall_speed
+    # Positive time_until_hit means note is in future (ABOVE strike line in screen space)
+    # Negative time_until_hit means note is in past (BELOW strike line, already hit)
+    # In OpenGL: higher Y = top of screen, lower Y = bottom
+    distance_from_strike = time_until_hit * fall_speed
     return strike_line_y + distance_from_strike
 
 
@@ -180,31 +181,35 @@ def calculate_note_alpha_fade(
     Returns:
         Alpha value 0.2 to 1.0
     """
-    # Before strike line: always full opacity
-    if note_y <= strike_line_y:
+    # In OpenGL coords: higher Y = top, lower Y = bottom
+    # Notes above strike line (note_y > strike_line_y): full opacity
+    if note_y >= strike_line_y:
         return 1.0
     
-    # After strike line: fade from 1.0 to 0.2
-    distance_after_strike = note_y - strike_line_y
-    max_distance = screen_bottom - strike_line_y
+    # Notes below strike line (already hit): fade from 1.0 to 0.2
+    distance_after_strike = strike_line_y - note_y
+    max_distance = strike_line_y - screen_bottom
     fade_progress = min(distance_after_strike / max_distance, 1.0)
     
     # Fade from 1.0 to 0.2 (never fully transparent)
     return 1.0 - (0.8 * fade_progress)
 
 
-def is_note_visible(note_y: float, screen_top: float = -1.0, screen_bottom: float = 1.0) -> bool:
+def is_note_visible(note_y: float, note_height: float = 0.06, screen_top: float = 1.0, screen_bottom: float = -1.0) -> bool:
     """Check if note is within visible screen bounds
     
     Args:
-        note_y: Y position of note
-        screen_top: Top of screen in normalized coords
-        screen_bottom: Bottom of screen in normalized coords
+        note_y: Y position of note (top-left corner)
+        note_height: Height of note
+        screen_top: Top of screen in normalized coords (higher Y)
+        screen_bottom: Bottom of screen in normalized coords (lower Y)
     
     Returns:
-        True if note is visible
+        True if note is visible (any part on screen)
     """
-    return screen_top <= note_y <= screen_bottom
+    note_bottom = note_y - note_height
+    # Note visible if bottom edge is below screen top AND top edge is above screen bottom
+    return note_bottom <= screen_top and note_y >= screen_bottom
 
 
 # ============================================================================

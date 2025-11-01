@@ -61,7 +61,7 @@ class TestFrameGeneration:
         
         # Should have correct lane position
         assert rect['x'] is not None
-        assert rect['y'] < 0.7  # Above strike line (time=2.0 means 2 seconds before hit)
+        assert rect['y'] > 0.7  # Above strike line (time=2.0 means 2 seconds before hit, higher Y in OpenGL)
         
         # Should have color based on lane
         assert rect['color'] is not None
@@ -114,21 +114,21 @@ class TestNoteVisibilityWindow:
         """Should calculate time window for visible notes"""
         from animation_core import calculate_visibility_window
         
-        # At strike line y=0.7, screen top y=-1.0, fall speed 1.0 unit/sec
+        # OpenGL coords: top=1.0, bottom=-1.0, strike line=-0.6, fall speed 1.0 unit/sec
         lookahead, lookbehind = calculate_visibility_window(
-            strike_line_y=0.7,
-            screen_top=-1.0,
-            screen_bottom=1.0,
+            strike_line_y=-0.6,
+            screen_top=1.0,
+            screen_bottom=-1.0,
             fall_speed=1.0
         )
         
         # Lookahead: time for note to travel from top to strike line
-        # Distance = 0.7 - (-1.0) = 1.7
-        assert lookahead == pytest.approx(1.7)
+        # Distance = 1.0 - (-0.6) = 1.6
+        assert lookahead == pytest.approx(1.6)
         
         # Lookbehind: time for note to travel from strike to bottom
-        # Distance = 1.0 - 0.7 = 0.3
-        assert lookbehind == pytest.approx(0.3)
+        # Distance = -0.6 - (-1.0) = 0.4
+        assert lookbehind == pytest.approx(0.4)
     
     def test_is_note_in_window(self):
         """Should determine if note is in visibility window"""

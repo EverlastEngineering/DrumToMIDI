@@ -72,12 +72,12 @@ def calculate_visibility_window(
     Returns:
         (lookahead_time, lookbehind_time) in seconds
     """
-    # Distance from top to strike line
-    distance_above = strike_line_y - screen_top
+    # Distance from top to strike line (top has higher Y, strike line lower)
+    distance_above = screen_top - strike_line_y
     lookahead_time = distance_above / fall_speed
     
-    # Distance from strike line to bottom
-    distance_below = screen_bottom - strike_line_y
+    # Distance from strike line to bottom (strike line higher Y, bottom lower)
+    distance_below = strike_line_y - screen_bottom
     lookbehind_time = distance_below / fall_speed
     
     return (lookahead_time, lookbehind_time)
@@ -151,7 +151,8 @@ def note_to_rectangle(
     current_time: float,
     lanes: List[str],
     strike_line_y: float,
-    fall_speed: float
+    fall_speed: float,
+    screen_bottom: float = -1.0
 ) -> Dict[str, Any]:
     """Convert note data to rectangle specification
     
@@ -181,9 +182,9 @@ def note_to_rectangle(
     # Calculate brightness from velocity
     brightness = velocity_to_brightness(note['velocity'])
     
-    # Apply fade if past strike line
-    if y_pos > strike_line_y:
-        alpha_fade = calculate_note_alpha_fade(y_pos, strike_line_y, 1.0)
+    # Apply fade if past strike line (below it, lower Y value)
+    if y_pos < strike_line_y:
+        alpha_fade = calculate_note_alpha_fade(y_pos, strike_line_y, screen_bottom)
         brightness *= alpha_fade
     
     # Get color
@@ -238,8 +239,9 @@ def build_frame_scene(
     notes: List[Dict[str, Any]],
     current_time: float,
     lanes: List[str],
-    strike_line_y: float = 0.7,
-    fall_speed: float = 1.0,
+    strike_line_y: float,
+    fall_speed: float,
+    screen_bottom: float = -1.0,
     include_backgrounds: bool = True,
     include_markers: bool = True,
     include_strike_line: bool = True
@@ -252,6 +254,7 @@ def build_frame_scene(
         lanes: List of all lane names
         strike_line_y: Y position of strike line
         fall_speed: Note fall speed
+        screen_bottom: Y position of screen bottom (for fade calculation)
         include_backgrounds: Whether to include lane backgrounds
         include_markers: Whether to include lane markers
         include_strike_line: Whether to include strike line
@@ -297,11 +300,12 @@ def build_frame_scene(
             current_time=current_time,
             lanes=lanes,
             strike_line_y=strike_line_y,
-            fall_speed=fall_speed
+            fall_speed=fall_speed,
+            screen_bottom=screen_bottom
         )
         
         # Only add if visible on screen
-        if is_note_visible(rect['y']):
+        if is_note_visible(rect['y'], rect['height'], screen_top=1.0, screen_bottom=screen_bottom):
             elements.append(rect)
     
     return elements

@@ -119,46 +119,46 @@ class TestNotePositionCalculations:
     """Test pure functions for note positioning in falling animation"""
     
     def test_calculate_note_y_position(self):
-        """Should calculate Y position based on time until hit"""
+        """Should calculate Y position based on time until hit - notes fall DOWN from top"""
         from moderngl_core import calculate_note_y_position
         
         # Note hits at strike line (y=0.7), falls at 1.0 units/second
-        # 2 seconds before hit should be at y=-1.3 (0.7 - 2.0)
+        # 2 seconds before hit should be ABOVE strike line (higher Y value)
         y_pos = calculate_note_y_position(
             time_until_hit=2.0,
             strike_line_y=0.7,
             fall_speed=1.0
         )
-        assert y_pos == pytest.approx(-1.3)
+        assert y_pos == pytest.approx(2.7)  # 0.7 + 2.0 (above)
         
         # At strike line (time=0)
         y_pos = calculate_note_y_position(0.0, 0.7, 1.0)
         assert y_pos == pytest.approx(0.7)
         
-        # After hit (continues falling)
+        # After hit (continues falling down, below strike line)
         y_pos = calculate_note_y_position(-1.0, 0.7, 1.0)
-        assert y_pos == pytest.approx(1.7)
+        assert y_pos == pytest.approx(-0.3)  # 0.7 - 1.0 (below)
     
     def test_calculate_note_alpha_fade(self):
-        """Should calculate alpha based on position after strike"""
+        """Should calculate alpha based on position after strike - OpenGL coords"""
         from moderngl_core import calculate_note_alpha_fade
         
-        strike_line_y = 0.7
-        screen_bottom = 1.0
+        strike_line_y = -0.6
+        screen_bottom = -1.0
         
         # At strike line: full opacity
-        alpha = calculate_note_alpha_fade(0.7, strike_line_y, screen_bottom)
+        alpha = calculate_note_alpha_fade(-0.6, strike_line_y, screen_bottom)
         assert alpha == pytest.approx(1.0)
         
         # Halfway to bottom: faded to 0.6
-        alpha = calculate_note_alpha_fade(0.85, strike_line_y, screen_bottom)
+        alpha = calculate_note_alpha_fade(-0.8, strike_line_y, screen_bottom)
         assert alpha == pytest.approx(0.6)
         
         # At bottom: minimum opacity (0.2)
-        alpha = calculate_note_alpha_fade(1.0, strike_line_y, screen_bottom)
+        alpha = calculate_note_alpha_fade(-1.0, strike_line_y, screen_bottom)
         assert alpha == pytest.approx(0.2)
         
-        # Before strike line: always 1.0
+        # Above strike line: always 1.0
         alpha = calculate_note_alpha_fade(0.5, strike_line_y, screen_bottom)
         assert alpha == pytest.approx(1.0)
     

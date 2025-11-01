@@ -74,11 +74,12 @@ def render_animation_to_frames(
     print(f"Duration: {duration}s")
     print(f"Notes: {len(notes)}")
     
-    # Calculate visibility window
+    # Calculate visibility window (add note height buffer so notes appear from above screen)
+    note_height = 0.06
     lookahead, lookbehind = calculate_visibility_window(
-        strike_line_y=0.7,
-        screen_top=-1.0,
-        screen_bottom=1.0,
+        strike_line_y=-0.6,
+        screen_top=1.0 + note_height,  # Start notes with bottom edge at screen top
+        screen_bottom=-1.0,
         fall_speed=1.0
     )
     
@@ -103,8 +104,9 @@ def render_animation_to_frames(
             notes=visible_notes,
             current_time=current_time,
             lanes=lanes,
-            strike_line_y=0.7,
-            fall_speed=1.0
+            strike_line_y=-0.6,
+            fall_speed=1.0,
+            screen_bottom=-1.0
         )
         
         frame_scenes.append(scene)

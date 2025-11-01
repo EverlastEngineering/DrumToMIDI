@@ -451,7 +451,7 @@ class TestAudioFilesAPI:
         
         from io import BytesIO
         data = {
-            'file': (BytesIO(b'fake mp3 data'), 'test_audio.mp3')
+            'file': (BytesIO(b'fake make up audio data'), 'test_audio.otheraudioformat')
         }
         
         response = client.post(
@@ -463,7 +463,7 @@ class TestAudioFilesAPI:
         assert response.status_code == 400
         result = json.loads(response.data)
         assert 'error' in result
-        assert 'WAV format' in result['message']
+        assert 'Audio file must be one of' in result['message']
     
     @patch('webui.api.projects.get_project_by_number')
     def test_upload_alternate_audio_no_project(self, mock_get_project, client):

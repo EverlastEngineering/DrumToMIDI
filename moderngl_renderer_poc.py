@@ -19,7 +19,7 @@ Phase 2 Goals:
 """
 
 import sys
-from moderngl_shell import render_frame_to_file
+from moderngl_renderer.shell import render_frame_to_file
 
 
 # Shaders and rendering logic now in moderngl_shell.py
@@ -33,7 +33,7 @@ def main():
     print("="*60 + "\n")
     
     try:
-        from moderngl_core import (
+        from moderngl_renderer.core import (
             create_strike_line, 
             create_lane_markers,
             create_background_lanes,

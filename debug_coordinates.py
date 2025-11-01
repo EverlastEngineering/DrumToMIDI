@@ -3,8 +3,8 @@
 Debug coordinate system to understand note falling direction
 """
 
-from moderngl_shell import render_frame_to_file
-from animation_core import build_frame_scene
+from moderngl_renderer.shell import render_frame_to_file
+from moderngl_renderer.animation import build_frame_scene
 
 # Create notes at different time positions
 notes = [

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Test fade logic to debug"""
 
-from moderngl_core import calculate_note_alpha_fade
+from moderngl_renderer.core import calculate_note_alpha_fade
 
 # Screen setup
 strike_line_y = -0.6

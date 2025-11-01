@@ -17,7 +17,7 @@ class TestRectangleDataTransformations:
     
     def test_apply_brightness_to_color(self):
         """Should multiply RGB values by brightness factor"""
-        from moderngl_core import apply_brightness_to_color
+        from moderngl_renderer.core import apply_brightness_to_color
         
         # Full brightness
         assert apply_brightness_to_color((1.0, 0.5, 0.0), 1.0) == (1.0, 0.5, 0.0)
@@ -30,7 +30,7 @@ class TestRectangleDataTransformations:
     
     def test_normalize_coords_topleft_to_bottomleft(self):
         """Should convert top-left origin to bottom-left (OpenGL convention)"""
-        from moderngl_core import normalize_coords_topleft_to_bottomleft
+        from moderngl_renderer.core import normalize_coords_topleft_to_bottomleft
         
         # Top-left: x=0, y=1, w=0.5, h=0.2
         # Bottom-left should be: x=0, y=0.8 (1.0 - 0.2), w=0.5, h=0.2
@@ -43,7 +43,7 @@ class TestRectangleDataTransformations:
     
     def test_normalized_to_pixel_size(self):
         """Should convert normalized width/height to pixel dimensions"""
-        from moderngl_core import normalized_to_pixel_size
+        from moderngl_renderer.core import normalized_to_pixel_size
         
         # Full screen width at 1920x1080
         w_px, h_px = normalized_to_pixel_size(2.0, 2.0, 1920, 1080)
@@ -62,7 +62,7 @@ class TestRectangleDataTransformations:
     
     def test_prepare_rectangle_instance_data(self):
         """Should prepare all GPU instance data from rectangle spec"""
-        from moderngl_core import prepare_rectangle_instance_data
+        from moderngl_renderer.core import prepare_rectangle_instance_data
         
         rect = {
             'x': -0.5, 
@@ -87,7 +87,7 @@ class TestRectangleDataTransformations:
     
     def test_batch_rectangle_data(self):
         """Should batch multiple rectangles into numpy arrays"""
-        from moderngl_core import batch_rectangle_data
+        from moderngl_renderer.core import batch_rectangle_data
         
         rectangles = [
             {'x': 0, 'y': 0, 'width': 0.1, 'height': 0.1, 
@@ -120,7 +120,7 @@ class TestNotePositionCalculations:
     
     def test_calculate_note_y_position(self):
         """Should calculate Y position based on time until hit - notes fall DOWN from top"""
-        from moderngl_core import calculate_note_y_position
+        from moderngl_renderer.core import calculate_note_y_position
         
         # Note hits at strike line (y=0.7), falls at 1.0 units/second
         # 2 seconds before hit should be ABOVE strike line (higher Y value)
@@ -141,7 +141,7 @@ class TestNotePositionCalculations:
     
     def test_calculate_note_alpha_fade(self):
         """Should calculate alpha based on position after strike - OpenGL coords"""
-        from moderngl_core import calculate_note_alpha_fade
+        from moderngl_renderer.core import calculate_note_alpha_fade
         
         strike_line_y = -0.6
         screen_bottom = -1.0
@@ -164,7 +164,7 @@ class TestNotePositionCalculations:
     
     def test_is_note_visible(self):
         """Should determine if note is in visible range"""
-        from moderngl_core import is_note_visible
+        from moderngl_renderer.core import is_note_visible
         
         # Note visible if y between -1.0 and 1.0 (normalized coords)
         assert is_note_visible(0.0) == True
@@ -182,7 +182,7 @@ class TestLaneCalculations:
     
     def test_get_lane_x_position(self):
         """Should return X position for drum lane"""
-        from moderngl_core import get_lane_x_position
+        from moderngl_renderer.core import get_lane_x_position
         
         # 4 lanes equally spaced
         lanes = ['hihat', 'snare', 'kick', 'tom']
@@ -197,7 +197,7 @@ class TestLaneCalculations:
     
     def test_get_note_width_for_type(self):
         """Should return appropriate width for note type"""
-        from moderngl_core import get_note_width_for_type
+        from moderngl_renderer.core import get_note_width_for_type
         
         # Kick notes are wider
         kick_width = get_note_width_for_type('kick')
@@ -217,7 +217,7 @@ class TestStrikeLineAndMarkers:
     
     def test_create_strike_line(self):
         """Should create strike line rectangle specification"""
-        from moderngl_core import create_strike_line
+        from moderngl_renderer.core import create_strike_line
         
         strike_line = create_strike_line(
             y_position=0.7,
@@ -239,7 +239,7 @@ class TestStrikeLineAndMarkers:
     
     def test_create_lane_markers(self):
         """Should create lane divider rectangles"""
-        from moderngl_core import create_lane_markers
+        from moderngl_renderer.core import create_lane_markers
         
         lanes = ['hihat', 'snare', 'kick', 'tom']
         markers = create_lane_markers(
@@ -263,7 +263,7 @@ class TestStrikeLineAndMarkers:
     
     def test_create_background_lanes(self):
         """Should create background rectangles for each lane"""
-        from moderngl_core import create_background_lanes
+        from moderngl_renderer.core import create_background_lanes
         
         lanes = ['hihat', 'snare', 'kick', 'tom']
         backgrounds = create_background_lanes(
@@ -290,3 +290,15 @@ class TestStrikeLineAndMarkers:
         # Background should have low brightness
         for bg in backgrounds:
             assert bg['brightness'] == pytest.approx(0.3)
+    
+    def test_create_lane_markers_single_lane(self):
+        """Should return empty list for single lane (no dividers needed)"""
+        from moderngl_renderer.core import create_lane_markers
+        
+        markers = create_lane_markers(
+            lanes=['kick'],
+            color=(1.0, 1.0, 1.0),
+            thickness=0.003
+        )
+        
+        assert markers == []

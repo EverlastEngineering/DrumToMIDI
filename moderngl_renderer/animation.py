@@ -8,7 +8,7 @@ Used by animation_shell.py to generate frame sequences.
 """
 
 from typing import List, Dict, Tuple, Any
-from moderngl_core import (
+from .core import (
     get_lane_x_position,
     get_note_width_for_type,
     get_note_height,

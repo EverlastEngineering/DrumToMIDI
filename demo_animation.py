@@ -8,8 +8,8 @@ Uses test note data to show GPU-accelerated rendering in action.
 
 import numpy as np
 from pathlib import Path
-from moderngl_shell import render_frames_to_array, ModernGLContext, render_rectangles, read_framebuffer
-from animation_core import (
+from moderngl_renderer.shell import render_frames_to_array, ModernGLContext, render_rectangles, read_framebuffer
+from moderngl_renderer.animation import (
     build_frame_scene,
     frame_time_from_number,
     total_frames_from_duration,

@@ -15,7 +15,7 @@ from PIL import Image
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
-from moderngl_core import batch_rectangle_data
+from .core import batch_rectangle_data
 
 
 # ============================================================================

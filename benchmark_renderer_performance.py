@@ -8,8 +8,8 @@ and CPU-based PIL rendering for the same scene.
 
 import time
 import numpy as np
-from moderngl_shell import render_frames_to_array
-from moderngl_core import (
+from moderngl_renderer.shell import render_frames_to_array
+from moderngl_renderer.core import (
     create_strike_line,
     create_lane_markers,
     create_background_lanes,

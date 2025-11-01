@@ -15,7 +15,7 @@ class TestFrameGeneration:
     
     def test_generate_frame_notes(self):
         """Should filter notes visible at specific frame time"""
-        from animation_core import generate_frame_notes
+        from moderngl_renderer.animation import generate_frame_notes
         
         # Notes with timing info
         notes = [
@@ -41,7 +41,7 @@ class TestFrameGeneration:
     
     def test_note_to_rectangle(self):
         """Should convert note data to rectangle specification"""
-        from animation_core import note_to_rectangle
+        from moderngl_renderer.animation import note_to_rectangle
         
         lanes = ['hihat', 'snare', 'kick', 'tom']
         
@@ -81,7 +81,7 @@ class TestTimeCalculations:
     
     def test_frame_time_from_number(self):
         """Should calculate time from frame number"""
-        from animation_core import frame_time_from_number
+        from moderngl_renderer.animation import frame_time_from_number
         
         # At 60 FPS
         assert frame_time_from_number(0, 60) == pytest.approx(0.0)
@@ -95,7 +95,7 @@ class TestTimeCalculations:
     
     def test_total_frames_from_duration(self):
         """Should calculate total frames from duration"""
-        from animation_core import total_frames_from_duration
+        from moderngl_renderer.animation import total_frames_from_duration
         
         # 3 seconds at 60 FPS
         assert total_frames_from_duration(3.0, 60) == 180
@@ -112,7 +112,7 @@ class TestNoteVisibilityWindow:
     
     def test_calculate_visibility_window(self):
         """Should calculate time window for visible notes"""
-        from animation_core import calculate_visibility_window
+        from moderngl_renderer.animation import calculate_visibility_window
         
         # OpenGL coords: top=1.0, bottom=-1.0, strike line=-0.6, fall speed 1.0 unit/sec
         lookahead, lookbehind = calculate_visibility_window(
@@ -132,7 +132,7 @@ class TestNoteVisibilityWindow:
     
     def test_is_note_in_window(self):
         """Should determine if note is in visibility window"""
-        from animation_core import is_note_in_window
+        from moderngl_renderer.animation import is_note_in_window
         
         # Note at time 5.0, current time 3.0, window 3s ahead, 1s behind
         assert is_note_in_window(5.0, 3.0, 3.0, 1.0) == True  # 2s ahead
@@ -148,7 +148,7 @@ class TestVelocityMapping:
     
     def test_velocity_to_brightness(self):
         """Should map MIDI velocity to brightness"""
-        from animation_core import velocity_to_brightness
+        from moderngl_renderer.animation import velocity_to_brightness
         
         # Full velocity = full brightness
         assert velocity_to_brightness(127) == pytest.approx(1.0)
@@ -164,7 +164,7 @@ class TestVelocityMapping:
     
     def test_lane_to_color(self):
         """Should map lane name to RGB color"""
-        from animation_core import lane_to_color
+        from moderngl_renderer.animation import lane_to_color
         
         # Standard drum colors
         hihat = lane_to_color('hihat')
@@ -186,7 +186,7 @@ class TestSceneComposition:
     
     def test_build_frame_scene(self):
         """Should compose complete frame scene"""
-        from animation_core import build_frame_scene
+        from moderngl_renderer.animation import build_frame_scene
         
         lanes = ['hihat', 'snare', 'kick', 'tom']
         notes = [
@@ -213,3 +213,63 @@ class TestSceneComposition:
             assert 'height' in element
             assert 'color' in element
             assert 'brightness' in element
+    
+    def test_note_fade_after_strike_line(self):
+        """Should apply fade to notes below strike line"""
+        from moderngl_renderer.animation import note_to_rectangle
+        
+        lanes = ['hihat', 'snare', 'kick', 'tom']
+        strike_line_y = -0.6
+        
+        # Note that has passed strike line (in the past)
+        note = {
+            'time': 0.0,
+            'lane': 'kick',
+            'velocity': 100,
+        }
+        
+        # Current time is 0.5s after note hit
+        rect = note_to_rectangle(
+            note=note,
+            current_time=0.5,
+            lanes=lanes,
+            strike_line_y=strike_line_y,
+            fall_speed=1.0,
+            screen_bottom=-1.0
+        )
+        
+        # Note should be below strike line (y < strike_line_y)
+        assert rect['y'] < strike_line_y
+        
+        # Brightness should be reduced by fade (< max brightness for velocity 100)
+        max_brightness = 0.3 + (100.0 / 127.0) * 0.7  # ~0.85
+        assert rect['brightness'] < max_brightness
+        # Fade multiplies with velocity brightness, minimum is 0.2 * velocity_brightness
+        min_brightness = 0.2 * max_brightness
+        assert rect['brightness'] == pytest.approx(min_brightness, abs=0.01)
+    
+    def test_note_visibility_filtering(self):
+        """Should filter notes outside visible bounds"""
+        from moderngl_renderer.animation import build_frame_scene
+        
+        lanes = ['hihat']
+        
+        # Create note way in the future (will be positioned above screen)
+        notes = [
+            {'time': 10.0, 'lane': 'hihat', 'velocity': 100}
+        ]
+        
+        scene = build_frame_scene(
+            notes=notes,
+            current_time=0.0,
+            lanes=lanes,
+            strike_line_y=-0.6,
+            fall_speed=1.0,
+            screen_bottom=-1.0,
+            include_backgrounds=False,
+            include_markers=False,
+            include_strike_line=False
+        )
+        
+        # Note should be filtered out (positioned above visible area)
+        assert len(scene) == 0

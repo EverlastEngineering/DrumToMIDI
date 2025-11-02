@@ -20,6 +20,7 @@ from midi_types import STANDARD_GM_DRUM_MAP
 
 # Import ModernGL renderer components
 from moderngl_renderer.midi_bridge_shell import render_midi_to_frames
+from moderngl_renderer.gpu_resident_shell import render_midi_to_frames_gpu_resident
 from moderngl_renderer.ffmpeg_encoder import FFmpegEncoder
 
 
@@ -29,7 +30,8 @@ def render_project_video_moderngl(
     height: int = 1080,
     fps: int = 60,
     audio_source: Optional[str] = 'original',
-    fall_speed_multiplier: float = 1.0
+    fall_speed_multiplier: float = 1.0,
+    use_gpu_resident: bool = True
 ) -> None:
     """
     Render MIDI to video using ModernGL GPU renderer for a specific project.
@@ -44,6 +46,7 @@ def render_project_video_moderngl(
         fps: Frames per second (default: 60)
         audio_source: Audio source selection - None (no audio), 'original', or 'alternate_mix/{filename}'
         fall_speed_multiplier: Speed multiplier for falling notes (1.0 = default, 0.5 = half speed, 2.0 = double speed)
+        use_gpu_resident: Use GPU-resident architecture (uploads all notes once) for 10x+ speedup
     
     Side Effects:
         - Reads MIDI file from project/midi/ directory
@@ -139,18 +142,28 @@ def render_project_video_moderngl(
     total_frames = int(total_duration * fps)
     
     print(f"Total frames: {total_frames}")
-    print("Initializing GPU renderer...")
-    print("Starting render...")
     
-    # Generate frames using GPU renderer (creates its own context)
-    frame_generator = render_midi_to_frames(
-        notes=drum_notes,
-        width=width,
-        height=height,
-        fps=fps,
-        duration=total_duration,
-        fall_speed_multiplier=fall_speed_multiplier
-    )
+    # Select renderer
+    if use_gpu_resident:
+        print("Using GPU-resident renderer (optimized architecture)...")
+        frame_generator = render_midi_to_frames_gpu_resident(
+            notes=drum_notes,
+            duration=total_duration,
+            width=width,
+            height=height,
+            fps=fps,
+            fall_speed_multiplier=fall_speed_multiplier
+        )
+    else:
+        print("Using naive renderer (per-frame uploads)...")
+        frame_generator = render_midi_to_frames(
+            notes=drum_notes,
+            width=width,
+            height=height,
+            fps=fps,
+            duration=total_duration,
+            fall_speed_multiplier=fall_speed_multiplier
+        )
     
     # Encode to video
     with FFmpegEncoder(

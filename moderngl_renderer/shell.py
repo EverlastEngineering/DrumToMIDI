@@ -156,6 +156,53 @@ void main() {
 }
 """
 
+# Circle rendering shaders (instanced circles with smooth anti-aliased edges)
+CIRCLE_VERTEX_SHADER = """
+#version 330
+
+in vec2 in_position;      // Vertex position (unit circle: -1 to 1)
+in vec3 in_color;         // Per-instance color
+in vec4 in_circle;        // Per-instance: x, y, radius, brightness (normalized coords)
+
+out vec3 v_color;
+out vec2 v_local_pos;     // Position within circle (-1 to 1)
+out float v_brightness;
+
+void main() {
+    // Scale unit circle by radius and translate to position
+    vec2 pos = in_circle.xy + in_position * in_circle.z;
+    gl_Position = vec4(pos, 0.0, 1.0);
+    
+    v_color = in_color;
+    v_local_pos = in_position;  // -1 to 1 within circle
+    v_brightness = in_circle.w;
+}
+"""
+
+CIRCLE_FRAGMENT_SHADER = """
+#version 330
+
+in vec3 v_color;
+in vec2 v_local_pos;
+in float v_brightness;
+
+out vec4 f_color;
+
+void main() {
+    // Distance from center (0-1 for edge, >1 for outside)
+    float dist = length(v_local_pos);
+    
+    // Smooth anti-aliased edge (1 pixel transition)
+    // Use fwidth for automatic derivative-based smoothing
+    float edge_smooth = fwidth(dist);
+    float alpha = 1.0 - smoothstep(1.0 - edge_smooth, 1.0, dist);
+    
+    // Apply brightness and alpha
+    alpha *= v_brightness;
+    
+    f_color = vec4(v_color, alpha);
+}
+"""
 
 # ============================================================================
 # GPU Context and Resource Management
@@ -277,6 +324,28 @@ class ModernGLContext:
             [ 1,  1],  # Top-right
         ], dtype='f4')
         self.fullscreen_vbo = self.ctx.buffer(fullscreen_quad.tobytes())
+        
+        # ====================================================================
+        # Circle rendering (instanced circles)
+        # ====================================================================
+        
+        # Compile circle shader program
+        self.circle_prog = self.ctx.program(
+            vertex_shader=CIRCLE_VERTEX_SHADER,
+            fragment_shader=CIRCLE_FRAGMENT_SHADER
+        )
+        
+        # Create unit circle vertices (triangle fan approximation)
+        # Using 32 segments for smooth circles
+        num_segments = 32
+        circle_vertices = []
+        for i in range(num_segments + 1):
+            angle = 2.0 * np.pi * i / num_segments
+            x = np.cos(angle)
+            y = np.sin(angle)
+            circle_vertices.append([x, y])
+        circle_vertices = np.array(circle_vertices, dtype='f4')
+        self.circle_vbo = self.ctx.buffer(circle_vertices.tobytes())
     
     def cleanup(self):
         """Release GPU resources
@@ -451,6 +520,72 @@ def render_rectangles(
     composite_vao.render(moderngl.TRIANGLE_STRIP)
     
     composite_vao.release()
+
+
+def render_circles(
+    ctx: ModernGLContext,
+    circles: List[Dict[str, Any]]
+) -> None:
+    """Render circles on top of current framebuffer
+    
+    Renders anti-aliased circles with alpha blending. Must be called
+    after render_rectangles() to overlay circles on the scene.
+    
+    Side effects:
+    - Renders to current framebuffer (ctx.fbo)
+    - Uploads data to GPU
+    - Executes draw call
+    - Allocates/deallocates GPU buffers
+    
+    Args:
+        ctx: ModernGL context
+        circles: List of circle specifications with keys:
+                 x, y (center in normalized coords)
+                 radius (in normalized coords)
+                 color (RGB tuple 0-1)
+                 brightness (alpha multiplier 0-1)
+    """
+    if not circles:
+        return
+    
+    # Prepare instanced data
+    colors = []
+    circle_data = []  # x, y, radius, brightness
+    
+    for circle in circles:
+        colors.append(circle['color'])
+        circle_data.append([
+            circle['x'],
+            circle['y'],
+            circle['radius'],
+            circle['brightness']
+        ])
+    
+    colors = np.array(colors, dtype='f4')
+    circle_data = np.array(circle_data, dtype='f4')
+    
+    # Upload instanced data
+    color_vbo = ctx.ctx.buffer(colors.tobytes())
+    circle_vbo = ctx.ctx.buffer(circle_data.tobytes())
+    
+    # Create VAO for instanced rendering
+    circle_vao = ctx.ctx.vertex_array(
+        ctx.circle_prog,
+        [
+            (ctx.circle_vbo, '2f', 'in_position'),     # Per-vertex
+            (color_vbo, '3f/i', 'in_color'),           # Per-instance
+            (circle_vbo, '4f/i', 'in_circle'),         # Per-instance
+        ]
+    )
+    
+    # Render circles to current framebuffer
+    ctx.fbo.use()
+    circle_vao.render(moderngl.TRIANGLE_FAN, instances=len(circles))
+    
+    # Cleanup
+    circle_vao.release()
+    color_vbo.release()
+    circle_vbo.release()
 
 
 def read_framebuffer(ctx: ModernGLContext) -> np.ndarray:

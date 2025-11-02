@@ -17,7 +17,7 @@ from .midi_bridge_core import (
     RenderConfig,
     build_frame_from_drum_notes
 )
-from .shell import ModernGLContext, render_rectangles
+from .shell import ModernGLContext, render_rectangles, render_circles
 
 
 def render_midi_frame(
@@ -32,6 +32,7 @@ def render_midi_frame(
     Imperative shell that:
     1. Uses pure functions to transform DrumNotes → rectangle specs
     2. Executes GPU rendering via ModernGL
+    3. Overlays highlight circles on strike line
     
     Side effects:
     - Renders to GPU framebuffer
@@ -52,9 +53,9 @@ def render_midi_frame(
     rectangles = frame_data['rectangles']
     render_rectangles(ctx, rectangles, clear_color)
     
-    # TODO: Add circle rendering when shell.py supports it
-    # circles = frame_data['circles']
-    # render_circles(ctx, circles)
+    # Overlay highlight circles
+    circles = frame_data['circles']
+    render_circles(ctx, circles)
 
 
 def render_midi_to_frames(

@@ -375,3 +375,118 @@ def test_multi_rectangle_baseline(small_context):
         baseline_path.parent.mkdir(exist_ok=True)
         np.save(baseline_path, result)
         pytest.skip("Created baseline, run again to compare")
+
+
+# ============================================================================
+# Circle Rendering Tests
+# ============================================================================
+
+def test_render_circles_smoke(small_context):
+    """Smoke test: Circle rendering should not crash"""
+    from .shell import render_circles
+    
+    circles = [
+        {'x': 0.0, 'y': 0.0, 'radius': 0.2, 'color': (1.0, 0.0, 0.0), 'brightness': 1.0}
+    ]
+    
+    # Should not crash
+    render_rectangles(small_context, [], clear_color=(0.0, 0.0, 0.0))
+    render_circles(small_context, circles)
+    result = read_framebuffer(small_context)
+    
+    assert result.shape == (100, 100, 3)
+
+
+def test_circles_have_red_pixels(small_context):
+    """Property test: Red circles should produce red-dominant pixels"""
+    from .shell import render_circles
+    
+    circles = [
+        {'x': 0.0, 'y': 0.0, 'radius': 0.5, 'color': (1.0, 0.0, 0.0), 'brightness': 1.0}
+    ]
+    
+    # Render on black background
+    render_rectangles(small_context, [], clear_color=(0.0, 0.0, 0.0))
+    render_circles(small_context, circles)
+    result = read_framebuffer(small_context)
+    
+    # Check that red channel dominates
+    avg_color = result.mean(axis=(0, 1))
+    assert avg_color[0] > avg_color[1]  # Red > green
+    assert avg_color[0] > avg_color[2]  # Red > blue
+
+
+def test_multiple_circles_render(small_context):
+    """Property test: Multiple circles should all render"""
+    from .shell import render_circles
+    
+    circles = [
+        {'x': -0.5, 'y': 0.0, 'radius': 0.2, 'color': (1.0, 0.0, 0.0), 'brightness': 1.0},
+        {'x': 0.5, 'y': 0.0, 'radius': 0.2, 'color': (0.0, 1.0, 0.0), 'brightness': 1.0},
+    ]
+    
+    render_rectangles(small_context, [], clear_color=(0.0, 0.0, 0.0))
+    render_circles(small_context, circles)
+    result = read_framebuffer(small_context)
+    
+    # Should have both red and green pixels
+    has_red = np.any(result[:, :, 0] > 100)
+    has_green = np.any(result[:, :, 1] > 100)
+    assert has_red and has_green
+
+
+def test_circle_brightness_affects_output(small_context):
+    """Property test: Brightness should modulate alpha"""
+    from .shell import render_circles
+    
+    # Bright circle
+    circles_bright = [
+        {'x': 0.0, 'y': 0.0, 'radius': 0.5, 'color': (1.0, 1.0, 1.0), 'brightness': 1.0}
+    ]
+    render_rectangles(small_context, [], clear_color=(0.0, 0.0, 0.0))
+    render_circles(small_context, circles_bright)
+    bright = read_framebuffer(small_context)
+    
+    # Dim circle
+    circles_dim = [
+        {'x': 0.0, 'y': 0.0, 'radius': 0.5, 'color': (1.0, 1.0, 1.0), 'brightness': 0.3}
+    ]
+    render_rectangles(small_context, [], clear_color=(0.0, 0.0, 0.0))
+    render_circles(small_context, circles_dim)
+    dim = read_framebuffer(small_context)
+    
+    # Bright should be brighter than dim
+    assert bright.mean() > dim.mean()
+
+
+def test_circles_overlay_on_rectangles(small_context):
+    """Integration test: Circles should render on top of rectangles"""
+    from .shell import render_circles
+    
+    rectangles = [
+        {'x': -0.8, 'y': -0.8, 'width': 1.6, 'height': 1.6, 
+         'color': (0.0, 0.0, 1.0), 'brightness': 1.0}  # Blue background
+    ]
+    circles = [
+        {'x': 0.0, 'y': 0.0, 'radius': 0.3, 'color': (1.0, 0.0, 0.0), 'brightness': 1.0}  # Red circle
+    ]
+    
+    render_rectangles(small_context, rectangles, clear_color=(0.0, 0.0, 0.0))
+    render_circles(small_context, circles)
+    result = read_framebuffer(small_context)
+    
+    # Should have both blue (background) and red (circle) pixels
+    has_blue = np.any(result[:, :, 2] > 100)
+    has_red = np.any(result[:, :, 0] > 100)
+    assert has_blue and has_red
+
+
+def test_empty_circles_does_not_crash(small_context):
+    """Smoke test: Empty circle list should not crash"""
+    from .shell import render_circles
+    
+    render_rectangles(small_context, [], clear_color=(0.0, 0.0, 0.0))
+    render_circles(small_context, [])
+    result = read_framebuffer(small_context)
+    
+    assert result.shape == (100, 100, 3)

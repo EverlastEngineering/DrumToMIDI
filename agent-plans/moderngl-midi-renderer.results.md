@@ -152,27 +152,66 @@ Track actual implementation results against the plan. Update this file as work p
 
 ---
 
-## Phase 2: Extend Animation System
-**Status**: Not Started  
-**Started**: -  
-**Completed**: -
+## Phase 2: Circle Rendering for Strike Highlights
+**Status**: COMPLETED ✓  
+**Started**: November 2, 2025  
+**Completed**: November 2, 2025
 
 ### Objectives
-- [ ] Add MIDI note structure to animation.py
-- [ ] Extend build_frame_scene() for kick drums
-- [ ] Add lane-based positioning
-- [ ] Create integration tests
+- [x] Add circle shader programs to shell.py
+- [x] Implement render_circles() function
+- [x] Integrate circle rendering into midi_bridge_shell
+- [x] Add comprehensive test suite for circles
+- [x] Verify circles overlay correctly on rectangles
 
 ### Metrics
-- Tests Passing: -
-- Performance: - FPS
-- Lines Added: -
+- Tests Created: 6 tests (smoke + property tests)
+- Tests Passing: 6/6 (100%)
+- Test Execution Time: 0.33s
+- Lines Added: ~150 (shaders + rendering + tests)
+- All moderngl_renderer tests: 88/88 passing
+- Total test suite time: 1.67s
+
+### Implementation Details
+
+**Circle Rendering Pipeline**:
+- CIRCLE_VERTEX_SHADER: Instanced circle vertices with per-instance data
+- CIRCLE_FRAGMENT_SHADER: Anti-aliased edges using fwidth() for smooth boundaries
+- Unit circle geometry (32 segments for smoothness)
+- Triangle fan rendering for filled circles
+- Alpha blending for transparency
+
+**Integration**:
+- render_circles() added to shell.py
+- midi_bridge_shell now calls render_circles after render_rectangles
+- Circles overlay on top of rectangle scene
+- Brightness parameter modulates alpha for pulsing effects
+
+**Test Coverage**:
+- Smoke test: Circle rendering doesn't crash
+- Property tests: Color correctness, multiple circles, brightness modulation
+- Integration test: Circles overlay on rectangles correctly
+- Edge case: Empty circle list handled gracefully
 
 ### Notes & Decisions
 
+**Decision 006: Triangle Fan vs Quad**
+**Date**: November 2, 2025  
+**Context**: How to render filled circles - quad with discard in shader vs triangle fan geometry.  
+**Decision**: Use triangle fan with 32 segments for smooth geometry.  
+**Rationale**: Better quality, no discarded fragments, GPU-efficient. Modern GPUs handle geometry well.  
+**Impact**: Smooth anti-aliased circles with good performance.
+
+**Decision 007: fwidth() for Anti-Aliasing**
+**Date**: November 2, 2025  
+**Context**: How to achieve smooth circle edges.  
+**Decision**: Use GLSL fwidth() for automatic derivative-based smoothing.  
+**Rationale**: Adapts to screen resolution automatically, single-pixel smooth transition, no manual tuning needed.  
+**Impact**: Crisp circles at any resolution.
+
 ---
 
-## Phase 3a: Basic Visual Parity
+## Phase 3: Next Steps
 **Status**: Not Started  
 **Started**: -  
 **Completed**: -
@@ -300,11 +339,11 @@ Track actual implementation results against the plan. Update this file as work p
 - **Speedup**: TBD
 
 ### Code Quality
-- **Total Tests**: 75 (38 midi_types + 26 bridge_core + 11 bridge_shell)
+- **Total Tests**: 81 (38 midi_types + 26 bridge_core + 11 bridge_shell + 6 circle_rendering)
 - **Test Coverage**: 100% of functional core modules
-- **Regression Tests**: All passing
+- **Regression Tests**: All passing (88/88 moderngl_renderer tests)
 - **New Files Created**: 7 (midi_types.py, midi_bridge_core.py, midi_bridge_shell.py, demo_midi_render.py + tests)
-- **Total Lines Added**: ~1,750 lines
+- **Total Lines Added**: ~1,900 lines
 
 ### Success Criteria Met
 - [ ] Functional parity with PIL renderer

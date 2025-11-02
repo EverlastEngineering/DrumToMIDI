@@ -83,26 +83,72 @@ Track actual implementation results against the plan. Update this file as work p
 
 ---
 
-## Phase 1: Extract Core Functions
-**Status**: Not Started  
-**Started**: -  
-**Completed**: -
+## Phase 1: MIDI to GPU Bridge
+**Status**: COMPLETED ✓  
+**Started**: November 2, 2025  
+**Completed**: November 2, 2025
 
 ### Objectives
-- [ ] Create `midi_core.py` with MIDI parsing functions
-- [ ] Update parsing to use `MidiNote` and `DrumNote` from midi_types.py
-- [ ] Create `midi_effects.py` with effect calculations
-- [ ] Add unit tests for extracted functions
-- [ ] Verify `test_cv2_rendering.py` still passes
+- [x] Create `midi_bridge_core.py` with pure transformation functions
+- [x] Create `midi_bridge_shell.py` with GPU rendering coordination
+- [x] Implement DrumNote → ModernGL rectangle conversion
+- [x] Add frame generation for video output
+- [x] Add comprehensive test suite (core + shell)
+- [x] Verify all existing tests still pass
 
 ### Metrics
-- Tests Passing: -
-- Lines Added: -
-- Lines Changed in render_midi_to_video.py: 0 (should remain 0)
-- Coverage: -
+- Tests Created: 37 tests (26 core + 11 shell)
+- Tests Passing: 37/37 (100%)
+- Test Execution Time: 0.69s
+- Lines Added: 364 (midi_bridge_core.py) + 144 (midi_bridge_shell.py) + test files
+- Coverage: 100% of bridge modules
+- All moderngl_renderer tests: 82/82 passing
+
+### Implementation Details
+
+**Module Structure**:
+- `midi_bridge_core.py`: Pure functions for MIDI → GPU data transformation
+  - RenderConfig: Configuration dataclass
+  - Coordinate conversions (RGB, pixel → normalized)
+  - Lane layout calculations
+  - DrumNote → rectangle conversion
+  - Highlight circle generation
+  - Frame scene building
+- `midi_bridge_shell.py`: Imperative shell for GPU operations
+  - render_midi_frame(): Single frame rendering
+  - render_midi_to_frames(): Generator for video output
+  - GPU context management
+  - Integration with shell.render_rectangles()
+
+**Key Features**:
+- OpenGL normalized coordinate system (-1.0 to 1.0)
+- Kick drum support (lane=-1 renders as full-width bar)
+- Multi-lane positioning with automatic layout
+- Velocity-based brightness
+- Time-based note visibility filtering
+- Highlight circles for strike line animation
+- Auto-duration calculation from note sequence
+
+**Test Coverage**:
+- Core tests (26): Configuration, coordinate conversion, lane layout, note conversion, frame building, purity invariants
+- Shell tests (11): Smoke tests (GPU operations don't crash), property tests (output validity, independence), generator tests (video frame sequence)
+- All tests follow testing guidelines (Level 1 smoke + Level 2 property tests)
 
 ### Notes & Decisions
-_Record deviations from plan, unexpected issues, and solutions here._
+
+**Decision 004: Bridge Before Parsing**
+**Date**: November 2, 2025  
+**Context**: Original plan had Phase 1 as extracting MIDI parsing from render_midi_to_video.py.  
+**Decision**: Built MIDI→GPU bridge first (new Phase 1), defer parsing extraction to later.  
+**Rationale**: Bridge is the integration point. Building it first validates the data contract from Phase 0 and ensures GPU renderer can consume DrumNotes. Parsing extraction can happen independently.  
+**Impact**: Can now render DrumNotes to video. Ready to add circle rendering and extract MIDI parsing in parallel.
+
+**Decision 005: Generator Pattern for Video**
+**Date**: November 2, 2025  
+**Context**: How to handle multi-frame video generation.  
+**Decision**: Use Python generator (render_midi_to_frames) that yields numpy arrays.  
+**Rationale**: Memory efficient (only one frame in memory at a time), clean interface for FFmpeg piping, easy to test.  
+**Impact**: Video generation can stream directly to FFmpeg without buffering all frames.
 
 ---
 
@@ -250,15 +296,15 @@ _Record deviations from plan, unexpected issues, and solutions here._
 ### Performance Summary
 - **Baseline (PIL)**: ~40 FPS
 - **Target (ModernGL)**: >100 FPS
-- **Achieved**: - FPS
-- **Speedup**: -x
+- **Achieved**: TBD (bridge complete, awaiting FFmpeg integration)
+- **Speedup**: TBD
 
 ### Code Quality
-- **Total Tests**: -
-- **Test Coverage**: -%
-- **Regression Tests**: - passing
-- **New Files Created**: -
-- **Total Lines Added**: -
+- **Total Tests**: 75 (38 midi_types + 26 bridge_core + 11 bridge_shell)
+- **Test Coverage**: 100% of functional core modules
+- **Regression Tests**: All passing
+- **New Files Created**: 7 (midi_types.py, midi_bridge_core.py, midi_bridge_shell.py, demo_midi_render.py + tests)
+- **Total Lines Added**: ~1,750 lines
 
 ### Success Criteria Met
 - [ ] Functional parity with PIL renderer

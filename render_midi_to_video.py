@@ -40,7 +40,12 @@ from midi_render_core import (
     calculate_strike_progress,
     calculate_lookahead_time,
     calculate_passthrough_time,
-    filter_and_remap_lanes
+    filter_and_remap_lanes,
+    calculate_kick_strike_pulse,
+    calculate_strike_color_mix,
+    calculate_strike_glow_size,
+    calculate_strike_alpha_boost,
+    calculate_strike_outline_width
 )
 
 # Import project manager
@@ -337,19 +342,12 @@ class MidiVideoRenderer:
                 width=2)
             
             # Smooth pulsing highlight when at strike line
-            strike_window = 0.08  # 80ms window for kick highlight
-            if abs(time_until_hit) < strike_window:
-                # Calculate pulse factor (0.0 to 1.0, peaks at center)
-                pulse_progress = 1.0 - abs(time_until_hit) / strike_window
-                pulse = abs(np.sin(pulse_progress * np.pi * 0.5))  # Smooth quarter-sine pulse
-                
-                # Color transitions to brighter/whiter at peak
-                white_mix = pulse * 0.5  # Mix up to 50% white
-                highlight_color = tuple(int(c + (255 - c) * white_mix) for c in base_color)
-                
-                # Size grows at peak
-                extra_height = int(8 * pulse)
-                bar_alpha = int(alpha * (0.8 + 0.2 * pulse))
+            pulse = calculate_kick_strike_pulse(time_until_hit, strike_window=0.08)
+            if pulse > 0:
+                # Calculate strike animation parameters using pure functions
+                highlight_color = calculate_strike_color_mix(base_color, pulse, white_mix_factor=0.5)
+                extra_height = calculate_strike_glow_size(0, pulse, size_multiplier=8.0)
+                bar_alpha = calculate_strike_alpha_boost(alpha, pulse, min_factor=0.8, max_factor=1.0)
                 
                 # Draw soft glow layers
                 for i in range(2, 0, -1):
@@ -363,7 +361,7 @@ class MidiVideoRenderer:
                 
                 # Main highlight bar
                 bright_outline = get_brighter_outline_color(highlight_color, 255)
-                outline_width = int(2 + 2 * pulse)
+                outline_width = calculate_strike_outline_width(2, pulse, width_increase=2)
                 draw_rounded_rectangle(draw,
                     (0, self.strike_line_y - self.kick_bar_height - extra_height,
                      self.width, self.strike_line_y + extra_height),

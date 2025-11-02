@@ -21,7 +21,12 @@ from midi_render_core import (
     calculate_used_lanes,
     create_lane_mapping,
     remap_note_lanes,
-    filter_and_remap_lanes
+    filter_and_remap_lanes,
+    calculate_kick_strike_pulse,
+    calculate_strike_color_mix,
+    calculate_strike_glow_size,
+    calculate_strike_alpha_boost,
+    calculate_strike_outline_width
 )
 from midi_types import DrumNote
 
@@ -398,6 +403,80 @@ class TestLaneManagement:
         assert remapped == notes  # Unchanged
 
 
+class TestStrikeAnimations:
+    """Test strike animation calculations"""
+    
+    def test_calculate_kick_strike_pulse_at_center(self):
+        """Pulse should be maximum at exact strike time"""
+        pulse = calculate_kick_strike_pulse(0.0, strike_window=0.08)
+        assert pulse == 1.0
+    
+    def test_calculate_kick_strike_pulse_at_edge(self):
+        """Pulse should be near zero at window edge"""
+        pulse = calculate_kick_strike_pulse(0.08, strike_window=0.08)
+        assert pulse < 0.1
+    
+    def test_calculate_kick_strike_pulse_outside_window(self):
+        """Pulse should be zero outside strike window"""
+        pulse = calculate_kick_strike_pulse(0.1, strike_window=0.08)
+        assert pulse == 0.0
+    
+    def test_calculate_kick_strike_pulse_symmetric(self):
+        """Pulse should be symmetric around strike time"""
+        pulse_before = calculate_kick_strike_pulse(-0.04, strike_window=0.08)
+        pulse_after = calculate_kick_strike_pulse(0.04, strike_window=0.08)
+        assert abs(pulse_before - pulse_after) < 0.01
+    
+    def test_calculate_strike_color_mix_no_pulse(self):
+        """No pulse should return original color"""
+        color = (100, 150, 200)
+        result = calculate_strike_color_mix(color, pulse=0.0)
+        assert result == color
+    
+    def test_calculate_strike_color_mix_full_pulse(self):
+        """Full pulse should brighten significantly"""
+        color = (100, 100, 100)
+        result = calculate_strike_color_mix(color, pulse=1.0, white_mix_factor=0.5)
+        # Should be 50% brighter: 100 + (255-100)*0.5 = 177.5
+        assert all(c > 170 for c in result)
+    
+    def test_calculate_strike_color_mix_preserves_white(self):
+        """White color should stay white"""
+        color = (255, 255, 255)
+        result = calculate_strike_color_mix(color, pulse=1.0)
+        assert result == (255, 255, 255)
+    
+    def test_calculate_strike_glow_size_no_pulse(self):
+        """No pulse should give zero size increase"""
+        size = calculate_strike_glow_size(10, pulse=0.0)
+        assert size == 0
+    
+    def test_calculate_strike_glow_size_full_pulse(self):
+        """Full pulse should give maximum size increase"""
+        size = calculate_strike_glow_size(10, pulse=1.0, size_multiplier=8.0)
+        assert size == 8
+    
+    def test_calculate_strike_alpha_boost_no_pulse(self):
+        """No pulse should give minimum boost"""
+        alpha = calculate_strike_alpha_boost(200, pulse=0.0, min_factor=0.8)
+        assert alpha == 160  # 200 * 0.8
+    
+    def test_calculate_strike_alpha_boost_full_pulse(self):
+        """Full pulse should give maximum boost"""
+        alpha = calculate_strike_alpha_boost(200, pulse=1.0, max_factor=1.0)
+        assert alpha == 200  # 200 * 1.0
+    
+    def test_calculate_strike_outline_width_no_pulse(self):
+        """No pulse should return base width"""
+        width = calculate_strike_outline_width(2, pulse=0.0)
+        assert width == 2
+    
+    def test_calculate_strike_outline_width_full_pulse(self):
+        """Full pulse should add width increase"""
+        width = calculate_strike_outline_width(2, pulse=1.0, width_increase=2)
+        assert width == 4
+
+
 class TestPurityInvariant:
     """Test that all functions are truly pure (no side effects)"""
     
@@ -410,12 +489,20 @@ class TestPurityInvariant:
         
         assert calculate_note_y_position(5.0, 3.0, 900, 400) == \
                calculate_note_y_position(5.0, 3.0, 900, 400)
+        
+        # Test strike animation functions
+        assert calculate_kick_strike_pulse(0.04, 0.08) == calculate_kick_strike_pulse(0.04, 0.08)
+        assert calculate_strike_color_mix((100, 100, 100), 0.5) == \
+               calculate_strike_color_mix((100, 100, 100), 0.5)
     
     def test_functions_dont_modify_inputs(self):
         """Functions should not modify their input parameters"""
         color = (255, 128, 64)
         original_color = color
         _ = apply_brightness_to_color(color, 0.5)
+        assert color == original_color
+        
+        _ = calculate_strike_color_mix(color, 0.5)
         assert color == original_color
         
         note = DrumNote(38, 1.0, 100, 0, (255, 0, 0), "Test")

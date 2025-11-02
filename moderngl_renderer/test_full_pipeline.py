@@ -7,14 +7,16 @@ Renders a 3-second video segment to verify everything works end-to-end.
 import sys
 import subprocess
 from pathlib import Path
+# Add parent directory to path to import from root
+sys.path.insert(0, str(Path(__file__).parent.parent))
 from render_midi_to_video import MidiVideoRenderer
 
 def test_full_pipeline():
     """Test full rendering pipeline with video encoding"""
     
-    # Use project 1 MIDI file
-    midi_file = Path("user_files/1 - The Fate Of Ophelia/midi/The Fate Of Ophelia.mid")
-    output_file = Path("test_moderngl_output.mp4")
+    # Use project 1 MIDI file (relative to root)
+    midi_file = Path(__file__).parent.parent / "user_files/1 - The Fate Of Ophelia/midi/The Fate Of Ophelia.mid"
+    output_file = Path(__file__).parent / "test_moderngl_output.mp4"
     
     if not midi_file.exists():
         print(f"ERROR: Test MIDI file not found: {midi_file}")

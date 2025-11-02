@@ -6,13 +6,15 @@ Renders just 10 frames of a MIDI file to verify the pipeline works.
 
 import sys
 from pathlib import Path
+# Add parent directory to path to import from root
+sys.path.insert(0, str(Path(__file__).parent.parent))
 from render_midi_to_video import MidiVideoRenderer
 
 def test_moderngl_integration():
     """Test ModernGL rendering integration"""
     
-    # Use project 1 MIDI file
-    midi_file = Path("user_files/1 - The Fate Of Ophelia/midi/The Fate Of Ophelia.mid")
+    # Use project 1 MIDI file (relative to root)
+    midi_file = Path(__file__).parent.parent / "user_files/1 - The Fate Of Ophelia/midi/The Fate Of Ophelia.mid"
     
     if not midi_file.exists():
         print(f"ERROR: Test MIDI file not found: {midi_file}")

@@ -5,6 +5,7 @@ Be very critical of code quality, approaches, and architecture.
 Use functional core, imperative shell to separate logic from side effects.
 Before refactoring, write tests to cover existing behavior.
 Use configuration files for parameters instead of hardcoding values.
+Define explicit type contracts using dataclasses (like `midi_types.py`) for data shared between modules.
 You may edit your own instruction files, and there's an instruction file for that!
 Always validate edit results: lint/compile errors reported by tools indicate actual syntax failures requiring immediate correction.
 Review the writing-documentation.instructions.md for guidance before writing documentation.

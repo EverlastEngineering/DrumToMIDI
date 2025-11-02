@@ -19,13 +19,15 @@ import mido # type: ignore
 import cv2 # type: ignore
 import numpy as np # type: ignore
 from PIL import Image, ImageDraw, ImageFont, ImageFilter # type: ignore
-from dataclasses import dataclass
 from typing import List, Tuple, Dict, Optional
 import os
 import sys
 import subprocess
 import shutil
 from pathlib import Path
+
+# Import MIDI types
+from midi_types import DrumNote, DrumMapping
 
 # Import project manager
 from project_manager import (
@@ -251,16 +253,6 @@ def cv2_draw_highlight_circle(canvas: np.ndarray, center_x: int, center_y: int,
                (*bright_color, 255), outline_width, cv2.LINE_AA)
 
 
-@dataclass
-class DrumNote:
-    """Represents a single drum note to be rendered"""
-    midi_note: int
-    time: float  # seconds
-    velocity: int
-    lane: int
-    color: Tuple[int, int, int]  # BGR color
-
-
 # Standard GM Drum Map - adjust based on your MIDI files
 # Each MIDI note maps to a list of lane definitions (most have 1, but some can have multiple)
 # Kick drum (36) uses lane -1 to indicate it's drawn as a screen-wide bar
@@ -387,7 +379,8 @@ class MidiVideoRenderer:
                                 time=absolute_time,
                                 velocity=msg.velocity,
                                 lane=drum_info["lane"],
-                                color=drum_info["color"]
+                                color=drum_info["color"],
+                                name=drum_info["name"]
                             )
                             notes.append(note)
                         total_duration = max(total_duration, absolute_time)
@@ -593,7 +586,7 @@ class MidiVideoRenderer:
         
         Args:
             draw: PIL ImageDraw object
-            note: DrumNote to draw
+            note: MidiNote to draw
             current_time: Current time in seconds
             first_highlight_frame: Set tracking which notes are showing highlight for first time
         """
@@ -657,7 +650,7 @@ class MidiVideoRenderer:
         
         Args:
             canvas: OpenCV BGRA canvas
-            note: DrumNote to draw
+            note: MidiNote to draw
             current_time: Current time in seconds
             first_highlight_frame: Set tracking which notes are showing highlight for first time
         """
@@ -812,10 +805,21 @@ class MidiVideoRenderer:
             sorted_used_lanes = sorted(used_lanes)
             lane_mapping = {original: new for new, original in enumerate(sorted_used_lanes)}
             
-            # Remap note lanes to consecutive positions
+            # Remap note lanes to consecutive positions (create new instances since DrumNote is frozen)
+            remapped_notes = []
             for note in notes:
                 if note.lane >= 0:
-                    note.lane = lane_mapping[note.lane]
+                    remapped_notes.append(DrumNote(
+                        midi_note=note.midi_note,
+                        time=note.time,
+                        velocity=note.velocity,
+                        lane=lane_mapping[note.lane],
+                        color=note.color,
+                        name=note.name
+                    ))
+                else:
+                    remapped_notes.append(note)
+            notes = remapped_notes
             
             # Update number of lanes and recalculate note width
             original_num_lanes = self.num_lanes

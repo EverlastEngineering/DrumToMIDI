@@ -86,7 +86,8 @@ def run_stems_to_midi(project_number: int, **kwargs):
 
 
 def run_render_video(project_number: int, fps: int = 60, width: int = 1920, height: int = 1080, 
-                     audio_source: str = 'original', include_audio: bool = None, fall_speed_multiplier: float = 1.0):
+                     audio_source: str = 'original', include_audio: bool = None, fall_speed_multiplier: float = 1.0,
+                     use_moderngl: bool = False):
     """
     Execute MIDI to video rendering for a project.
     
@@ -96,6 +97,7 @@ def run_render_video(project_number: int, fps: int = 60, width: int = 1920, heig
         audio_source: Audio source - None, 'original', or 'alternate_mix/{filename}'
         include_audio: DEPRECATED - kept for backward compatibility
         fall_speed_multiplier: Note fall speed multiplier (1.0 = default)
+        use_moderngl: Use GPU-accelerated ModernGL renderer (default: False)
     """
     from render_midi_to_video import render_project_video
     from project_manager import get_project_by_number, USER_FILES_DIR
@@ -106,7 +108,8 @@ def run_render_video(project_number: int, fps: int = 60, width: int = 1920, heig
     
     render_project_video(project, fps=fps, width=width, height=height, 
                         audio_source=audio_source, include_audio=include_audio,
-                        fall_speed_multiplier=fall_speed_multiplier)
+                        fall_speed_multiplier=fall_speed_multiplier,
+                        use_moderngl=use_moderngl)
     
     return {'project_number': project_number, 'video_created': True}
 
@@ -369,7 +372,8 @@ def render_video():
             "height": 1080,      # optional
             "audio_source": null # optional: null, 'original', or 'alternate_mix/{filename}'
             "include_audio": false,  # DEPRECATED: use audio_source instead
-            "fall_speed_multiplier": 1.0  # optional: 0.5-2.0, controls note fall speed
+            "fall_speed_multiplier": 1.0,  # optional: 0.5-2.0, controls note fall speed
+            "use_moderngl": false  # optional: use GPU-accelerated renderer
         }
         
     Returns:
@@ -404,6 +408,7 @@ def render_video():
         audio_source = data.get('audio_source', None)
         include_audio = data.get('include_audio', None)  # Deprecated but still supported
         fall_speed_multiplier = data.get('fall_speed_multiplier', 1.0)
+        use_moderngl = data.get('use_moderngl', False)
         
         # Submit job
         job_queue = get_job_queue()
@@ -417,7 +422,8 @@ def render_video():
             height=height,
             audio_source=audio_source,
             include_audio=include_audio,
-            fall_speed_multiplier=fall_speed_multiplier
+            fall_speed_multiplier=fall_speed_multiplier,
+            use_moderngl=use_moderngl
         )
         
         return jsonify({

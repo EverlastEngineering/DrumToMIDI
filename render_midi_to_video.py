@@ -982,7 +982,8 @@ def render_project_video(
     audio_source: Optional[str] = 'original',
     include_audio: Optional[bool] = None,  # Deprecated: kept for backward compatibility
     fall_speed_multiplier: float = 1.0,
-    use_opencv: bool = False
+    use_opencv: bool = False,
+    use_moderngl: bool = False
 ):
     """
     Render MIDI to video for a specific project.
@@ -996,17 +997,33 @@ def render_project_video(
         audio_source: Audio source selection - None (no audio), 'original', or 'alternate_mix/{filename}'
         include_audio: DEPRECATED - use audio_source instead. If True, uses 'original'
         fall_speed_multiplier: Speed multiplier for falling notes (1.0 = default, 0.5 = half speed, 2.0 = double speed)
+        use_opencv: Use OpenCV-based PIL renderer (legacy)
+        use_moderngl: Use GPU-accelerated ModernGL renderer (faster, recommended)
     """
+    # Handle backward compatibility with include_audio
+    if include_audio is not None and audio_source is None:
+        audio_source = 'original' if include_audio else None
+        print("Note: include_audio parameter is deprecated, use audio_source instead")
+    
+    # Use ModernGL GPU renderer if requested
+    if use_moderngl:
+        from moderngl_renderer.project_integration import render_project_video_moderngl
+        render_project_video_moderngl(
+            project=project,
+            width=width,
+            height=height,
+            fps=fps,
+            audio_source=audio_source,
+            fall_speed_multiplier=fall_speed_multiplier
+        )
+        return
+    
+    # Otherwise use legacy PIL/OpenCV renderer
     project_dir = project["path"]
     
     print(f"\n{'='*60}")
     print(f"Rendering Video - Project {project['number']}: {project['name']}")
     print(f"{'='*60}\n")
-    
-    # Handle backward compatibility with include_audio
-    if include_audio is not None and audio_source is None:
-        audio_source = 'original' if include_audio else None
-        print("Note: include_audio parameter is deprecated, use audio_source instead")
     
     # Find MIDI files in project/midi/ directory
     midi_dir = project_dir / "midi"
@@ -1124,6 +1141,8 @@ Examples:
                        help='Note fall speed multiplier (default: 1.0, range: 0.5-2.0)')
     parser.add_argument('--use-opencv', action='store_true',
                        help='Use OpenCV for rendering (experimental performance optimization)')
+    parser.add_argument('--use-moderngl', action='store_true',
+                       help='Use GPU-accelerated ModernGL renderer (faster, recommended)')
     
     args = parser.parse_args()
     
@@ -1158,7 +1177,8 @@ Examples:
         preview=args.preview,
         audio_source=None if args.no_audio else 'original',
         fall_speed_multiplier=args.fall_speed,
-        use_opencv=args.use_opencv
+        use_opencv=args.use_opencv,
+        use_moderngl=args.use_moderngl
     )
     
     return 0

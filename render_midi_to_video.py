@@ -27,6 +27,9 @@ import subprocess
 import shutil
 from pathlib import Path
 
+# Import ModernGL renderer
+from moderngl_renderer import ModernGLContext
+
 # Import project manager
 from project_manager import (
     discover_projects,
@@ -300,6 +303,9 @@ class MidiVideoRenderer:
         self.corner_radius = 8  # Rounded corners for anti-aliasing
         self.motion_blur_strength = 2  # Pixels of motion blur
         
+        # Initialize ModernGL rendering context
+        self.gl_context = ModernGLContext(width, height)
+        
         # Load font for UI
         self.font = self._load_font(24)
         self.font_small = self._load_font(16)
@@ -399,6 +405,96 @@ class MidiVideoRenderer:
         total_duration += 3.0
         
         return notes, total_duration
+    
+    def render_frame_with_moderngl(self, notes: List[DrumNote], current_time: float, lookahead_time: float, passthrough_time: float, note_index: int) -> Tuple[np.ndarray, int]:
+        """Render a single frame using ModernGL
+        
+        Args:
+            notes: All notes in the MIDI file
+            current_time: Current playback time in seconds
+            lookahead_time: How far ahead to show notes (seconds)
+            passthrough_time: How long after hit before note disappears (seconds)
+            note_index: Starting index for visible note search
+            
+        Returns:
+            Tuple of (rendered frame as BGR numpy array, updated note_index)
+        """
+        from moderngl_renderer import render_rectangles, read_framebuffer
+        
+        # Collect visible notes and convert to rectangles
+        rectangles = []
+        visible_start = note_index
+        new_note_index = note_index
+        
+        for i in range(visible_start, len(notes)):
+            note = notes[i]
+            time_until_hit = note.time - current_time
+            
+            # Note is too far in the future
+            if time_until_hit > lookahead_time:
+                break
+            
+            # Note has passed off bottom - update start index
+            if time_until_hit < -passthrough_time and i == note_index:
+                new_note_index = i + 1
+                continue
+            
+            # Calculate note position and properties
+            y_pos_float = self.strike_line_y - (time_until_hit * self.pixels_per_second)
+            y_pos = int(round(y_pos_float))
+            
+            # Skip notes not yet visible or already off-screen
+            if y_pos < -self.note_height or y_pos > self.height + self.note_height:
+                continue
+            
+            # Calculate alpha and brightness
+            alpha_factor = calculate_note_alpha(time_until_hit, y_pos, self.strike_line_y, self.height)
+            brightness = calculate_brightness(note.velocity)
+            base_color = apply_brightness_to_color(note.color, brightness)
+            alpha = alpha_factor
+            
+            # Convert to rectangle format for ModernGL
+            # ModernGL expects normalized coordinates (-1 to 1) with TOP-LEFT origin
+            # The rendering function will convert to bottom-left for OpenGL
+            if note.lane == -1:
+                # Kick drum: full-width bar, y_pos is bottom of bar
+                pixel_x = 0
+                pixel_y = y_pos - self.kick_bar_height  # Top of bar
+                pixel_width = self.width
+                pixel_height = self.kick_bar_height
+            else:
+                # Regular note: lane-based rectangle, y_pos is bottom of note
+                pixel_x = note.lane * self.note_width
+                pixel_y = y_pos - self.note_height  # Top of note
+                pixel_width = self.note_width
+                pixel_height = self.note_height
+            
+            # Convert pixels to normalized coordinates (-1 to 1) with top-left origin
+            norm_x = (pixel_x / self.width) * 2.0 - 1.0
+            norm_y = (pixel_y / self.height) * 2.0 - 1.0
+            norm_width = (pixel_width / self.width) * 2.0
+            norm_height = (pixel_height / self.height) * 2.0
+            
+            # Add rectangle with normalized coordinates and brightness
+            rectangles.append({
+                'x': norm_x,
+                'y': norm_y,
+                'width': norm_width,
+                'height': norm_height,
+                'color': tuple(c / 255.0 for c in base_color),
+                'brightness': alpha  # Alpha is 0.0-1.0, use as brightness
+            })
+        
+        # Render rectangles to framebuffer
+        render_rectangles(self.gl_context, rectangles, clear_color=(0.0, 0.0, 0.0))
+        
+        # Read pixels from framebuffer
+        frame_rgb = read_framebuffer(self.gl_context)
+        
+        # Convert RGB to BGR for OpenCV compatibility
+        frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+        
+        return frame_bgr, new_note_index
     
     def draw_note(self, draw: ImageDraw.ImageDraw, note: DrumNote, current_time: float, draw_kick_only: bool = False, skip_highlight: bool = False, first_kick_frame: set = None) -> bool:
         """Draw a single falling note with anti-aliasing and motion blur
@@ -903,7 +999,19 @@ class MidiVideoRenderer:
             # Create base layer with opaque black background
             base_layer = Image.new('RGB', (self.width, self.height), (0, 0, 0))
             
-            # Create combined notes+kick layer (reduce layer count from 5 to 3)
+            # Calculate time needed for note to pass off bottom of screen
+            passthrough_time = (self.height - self.strike_line_y + self.note_height) / self.pixels_per_second
+            
+            # Render notes using ModernGL
+            notes_frame_bgr, note_index = self.render_frame_with_moderngl(
+                notes, current_time, lookahead_time, passthrough_time, note_index
+            )
+            
+            # Convert ModernGL output (BGR) to PIL Image (RGB) for compositing
+            notes_frame_rgb = cv2.cvtColor(notes_frame_bgr, cv2.COLOR_BGR2RGB)
+            notes_image = Image.fromarray(notes_frame_rgb, 'RGB')
+            
+            # Create layer with lanes drawn on top
             notes_layer = Image.new('RGBA', (self.width, self.height), (0, 0, 0, 0))
             notes_draw = ImageDraw.Draw(notes_layer, 'RGBA')
             
@@ -912,29 +1020,12 @@ class MidiVideoRenderer:
                 x = lane * self.note_width + self.note_width // 2
                 notes_draw.line([(x, 0), (x, self.height)], fill=(80, 80, 80, 255), width=1)
             
-            # Draw visible notes - only check notes in the visible time window
-            # Start from first note that hasn't passed completely
-            # Calculate time needed for note to pass off bottom of screen
-            passthrough_time = (self.height - self.strike_line_y + self.note_height) / self.pixels_per_second
+            # Composite notes onto base, then add lanes overlay
+            base_layer.paste(notes_image, (0, 0))
+            base_layer.paste(notes_layer, (0, 0), notes_layer)
             
+            # Track visible notes for highlights (need to recalculate)
             visible_start = note_index
-            for i in range(visible_start, len(notes)):
-                note = notes[i]
-                time_until_hit = note.time - current_time
-                
-                # Note is too far in the future
-                if time_until_hit > lookahead_time:
-                    break
-                
-                # Note has passed off bottom of screen - update start index for next frame
-                if time_until_hit < -passthrough_time and i == note_index:
-                    note_index = i + 1
-                    continue
-                
-                # Draw all notes (kick and regular) on the same layer
-                self.draw_note(notes_draw, note, current_time, 
-                              draw_kick_only=(note.lane == -1), 
-                              first_kick_frame=first_highlight_frame)
             
             # Create strike line layer (rendered on top of everything)
             if self.use_opencv:

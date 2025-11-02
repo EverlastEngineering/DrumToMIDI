@@ -26,8 +26,9 @@ import subprocess
 import shutil
 from pathlib import Path
 
-# Import MIDI types
+# Import MIDI types and parser
 from midi_types import DrumNote, DrumMapping
+from midi_parser import parse_midi_file
 
 # Import project manager
 from project_manager import (
@@ -314,84 +315,11 @@ class MidiVideoRenderer:
         return ImageFont.load_default()
         
     def parse_midi(self, midi_path: str) -> Tuple[List[DrumNote], float]:
-        """Parse MIDI file and extract drum notes with timing"""
-        midi_file = mido.MidiFile(midi_path)
-        notes = []
-        total_duration = 0.0
+        """Parse MIDI file and extract drum notes with timing
         
-        # Build global tempo map from ALL tracks (critical for Type 1 MIDI files)
-        # In Type 1 MIDI, Track 0 usually contains tempo, but notes are in other tracks
-        tempo_map = []  # List of (absolute_time_seconds, tempo) tuples
-        
-        for track in midi_file.tracks:
-            current_time_ticks = 0
-            absolute_time = 0.0
-            current_tempo = 500000  # Default 120 BPM
-            
-            for msg in track:
-                # Update absolute time BEFORE processing the message
-                if msg.time > 0:
-                    absolute_time += mido.tick2second(msg.time, midi_file.ticks_per_beat, current_tempo)
-                
-                if msg.type == 'set_tempo':
-                    # Record this tempo change
-                    tempo_map.append((absolute_time, msg.tempo))
-                    current_tempo = msg.tempo
-        
-        # Sort tempo map by time and remove duplicates
-        tempo_map.sort()
-        if not tempo_map:
-            tempo_map = [(0.0, 500000)]  # Default to 120 BPM if no tempo found
-        
-        # Remove duplicate tempo changes at same time (keep last one)
-        unique_tempo_map = []
-        for i, (time, tempo) in enumerate(tempo_map):
-            if i == 0 or abs(time - tempo_map[i-1][0]) > 0.001:
-                unique_tempo_map.append((time, tempo))
-            else:
-                # Replace previous if at same time
-                unique_tempo_map[-1] = (time, tempo)
-        tempo_map = unique_tempo_map
-        
-        # Now parse notes using the global tempo map
-        for track in midi_file.tracks:
-            absolute_time = 0.0
-            tempo_idx = 0
-            current_tempo = tempo_map[0][1]
-            
-            for msg in track:
-                # Check if we need to advance to next tempo change
-                while (tempo_idx + 1 < len(tempo_map) and 
-                       absolute_time >= tempo_map[tempo_idx + 1][0] - 0.001):
-                    tempo_idx += 1
-                    current_tempo = tempo_map[tempo_idx][1]
-                
-                # Calculate time delta and add to absolute time
-                if msg.time > 0:
-                    absolute_time += mido.tick2second(msg.time, midi_file.ticks_per_beat, current_tempo)
-                
-                if msg.type == 'note_on' and msg.velocity > 0:
-                    if msg.note in DRUM_MAP:
-                        # Create a note for each lane definition (most notes have 1, some have multiple)
-                        for drum_info in DRUM_MAP[msg.note]:
-                            note = DrumNote(
-                                midi_note=msg.note,
-                                time=absolute_time,
-                                velocity=msg.velocity,
-                                lane=drum_info["lane"],
-                                color=drum_info["color"],
-                                name=drum_info["name"]
-                            )
-                            notes.append(note)
-                        total_duration = max(total_duration, absolute_time)
-        
-        # Sort by time
-        notes.sort(key=lambda n: n.time)
-        
-        # Add 3 seconds at the end
-        total_duration += 3.0
-        
-        return notes, total_duration
+        Now delegates to midi_parser module for clean separation of concerns.
+        """
+        return parse_midi_file(midi_path, drum_map=DRUM_MAP, tail_duration=3.0)
     
     def draw_note(self, draw: ImageDraw.ImageDraw, note: DrumNote, current_time: float, draw_kick_only: bool = False, skip_highlight: bool = False, first_kick_frame: set = None) -> bool:
         """Draw a single falling note with anti-aliasing and motion blur

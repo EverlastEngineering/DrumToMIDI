@@ -10,8 +10,6 @@ Always validate edit results: lint/compile errors reported by tools indicate act
 Review the writing-documentation.instructions.md for guidance before writing documentation.
 Review the how-to-perform-testing.instructions.md when dealing with tests.
 Let user know you've read instructions for confidence in your actions.
-When you complete a task, simply say "Done!" - do not provide summaries, explanations, or lists of changes made. The user can see what you did through the tool calls and test results.
-Do not make summary documents after completing tasks.
 
 Documentation and error handling are first-class concerns, not afterthoughts:
 - Write documentation as you build each feature, not at the end

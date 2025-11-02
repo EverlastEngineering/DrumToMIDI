@@ -9,6 +9,7 @@ Creates test images to verify rendering quality:
 - Lane alignment
 """
 
+from pathlib import Path
 from moderngl_renderer.shell import render_frame_to_file
 from moderngl_renderer.core import (
     create_strike_line,
@@ -22,6 +23,11 @@ def test_rounded_corners():
     """Test rounded corner anti-aliasing at various sizes"""
     
     print("Creating rounded corners test...")
+    
+    # Output to test_artifacts
+    artifacts_dir = Path(__file__).parent / "test_artifacts"
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    output_path = artifacts_dir / "test_rounded_corners.png"
     
     rectangles = []
     
@@ -40,19 +46,24 @@ def test_rounded_corners():
     # For now, all use same radius
     render_frame_to_file(
         rectangles=rectangles,
-        output_path="test_rounded_corners.png",
+        output_path=str(output_path),
         width=1920,
         height=1080,
         corner_radius=12.0
     )
     
-    print("✓ Saved: test_rounded_corners.png")
+    print(f"✓ Saved: {output_path}")
 
 
 def test_alpha_blending():
     """Test alpha transparency with overlapping elements"""
     
     print("Creating alpha blending test...")
+    
+    # Output to test_artifacts
+    artifacts_dir = Path(__file__).parent / "test_artifacts"
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    output_path = artifacts_dir / "test_alpha_blending.png"
     
     rectangles = []
     
@@ -75,19 +86,24 @@ def test_alpha_blending():
     
     render_frame_to_file(
         rectangles=rectangles,
-        output_path="test_alpha_blending.png",
+        output_path=str(output_path),
         width=1920,
         height=1080,
         corner_radius=12.0
     )
     
-    print("✓ Saved: test_alpha_blending.png")
+    print(f"✓ Saved: {output_path}")
 
 
 def test_full_scene():
     """Test complete scene with all elements"""
     
     print("Creating full scene test...")
+    
+    # Output to test_artifacts
+    artifacts_dir = Path(__file__).parent / "test_artifacts"
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    output_path = artifacts_dir / "test_full_scene.png"
     
     lanes = ['hihat', 'snare', 'kick', 'tom']
     
@@ -143,13 +159,13 @@ def test_full_scene():
     
     render_frame_to_file(
         rectangles=elements,
-        output_path="test_full_scene.png",
+        output_path=str(output_path),
         width=1920,
         height=1080,
         corner_radius=12.0
     )
     
-    print("✓ Saved: test_full_scene.png")
+    print(f"✓ Saved: {output_path}")
     print(f"  Total elements: {len(elements)}")
 
 
@@ -164,10 +180,12 @@ def main():
     test_alpha_blending()
     test_full_scene()
     
+    artifacts_dir = Path(__file__).parent / "test_artifacts"
+    
     print("\n" + "="*60)
     print("All tests complete!")
     print("="*60)
-    print("\nGenerated images:")
+    print(f"\nGenerated images in {artifacts_dir}/:")
     print("  • test_rounded_corners.png - Corner anti-aliasing")
     print("  • test_alpha_blending.png - Transparency blending")
     print("  • test_full_scene.png - Complete visualization")

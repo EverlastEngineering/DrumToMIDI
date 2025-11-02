@@ -50,5 +50,8 @@ user_files/*
 # Logs
 *.log
 
+# Test artifacts
+moderngl_renderer/test_artifacts/
+
 # Environment
 .env

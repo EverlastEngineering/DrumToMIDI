@@ -268,7 +268,83 @@ Track actual implementation results against the plan. Update this file as work p
 
 ---
 
-## Phase 4: Next Steps
+## Phase 4: FFmpeg Video Encoding
+**Status**: COMPLETED ✓  
+**Started**: November 2, 2025  
+**Completed**: November 2, 2025
+
+### Objectives
+- [x] Create ffmpeg_encoder.py module (imperative shell)
+- [x] Implement FFmpegEncoder class with context manager
+- [x] Add audio sync support
+- [x] Create comprehensive test suite (12 tests)
+- [x] Update demo to output actual video files
+- [x] Validate complete pipeline (MIDI → GPU → FFmpeg → MP4)
+
+### Metrics
+- Tests Created: 12 tests (smoke + property + error handling)
+- Tests Passing: 12/12 (100%)
+- Test Execution Time: 1.69s
+- Lines Added: ~325 (encoder + tests)
+- All moderngl_renderer tests: 100/100 passing
+- Total test suite time: 2.67s
+
+### Implementation Details
+
+**FFmpeg Integration**:
+- FFmpegEncoder class: Manages subprocess lifecycle
+- Context manager support: `with FFmpegEncoder(...) as encoder:`
+- Convenience function: `encode_frames_to_video()` for simple workflows
+- Streaming pipeline: Generator → FFmpeg stdin (no intermediate files)
+
+**Features**:
+- H.264 encoding with configurable quality (CRF, preset)
+- Optional audio track synchronization
+- Auto-discovery of audio files (same stem as MIDI)
+- Progress reporting (frames encoded, elapsed time)
+- Web-optimized output (faststart flag for streaming)
+- Comprehensive error handling with helpful messages
+
+**Configuration Options**:
+- Resolution: Any (tested 320x240 to 1920x1080)
+- FPS: Any (tested 24, 30, 60)
+- Preset: ultrafast, fast, medium, slow, veryslow
+- CRF: 0-51 (lower=better quality, 23=default)
+- Pixel format: yuv420p (maximum compatibility)
+- Audio: AAC at configurable bitrate (default 192k)
+
+**Test Coverage**:
+- Smoke tests: Basic encoding, context manager, manual lifecycle
+- Property tests: Different resolutions, FPS values, frame counter
+- Error handling: Not started, wrong shape/dtype, double start, missing audio
+- Pure function: Command building validation
+
+### Notes & Decisions
+
+**Decision 010: Streaming vs Buffered**
+**Date**: November 2, 2025  
+**Context**: How to handle frame data - buffer all in memory or stream to FFmpeg?  
+**Decision**: Stream frames directly to FFmpeg stdin via generator.  
+**Rationale**: Memory efficient (only 1 frame in memory at a time), simpler code, faster startup. No need for temporary files.  
+**Impact**: Can encode arbitrarily long videos without memory issues. Clean pipeline.
+
+**Decision 011: RGB vs BGR Input**
+**Date**: November 2, 2025  
+**Context**: ModernGL outputs RGB, OpenCV uses BGR. Which format for FFmpeg?  
+**Decision**: Use RGB (pix_fmt=rgb24) to match ModernGL output directly.  
+**Rationale**: No color space conversion needed. Direct pass-through from GPU to FFmpeg. PIL also uses RGB.  
+**Impact**: Simpler pipeline, one less transformation, correct colors guaranteed.
+
+**Decision 012: Audio Auto-Discovery**
+**Date**: November 2, 2025  
+**Context**: How to find audio file for a given MIDI file?  
+**Decision**: Search for audio with same stem as MIDI (test.mid → test.wav/mp3/m4a).  
+**Rationale**: Convention-based discovery reduces user configuration. Matches typical workflow.  
+**Impact**: Demo "just works" when audio file exists alongside MIDI.
+
+---
+
+## Phase 5: Next Steps
 **Status**: Not Started  
 **Started**: -  
 **Completed**: -
@@ -396,11 +472,11 @@ Track actual implementation results against the plan. Update this file as work p
 - **Speedup**: TBD
 
 ### Code Quality
-- **Total Tests**: 81 (38 midi_types + 26 bridge_core + 11 bridge_shell + 6 circle_rendering)
+- **Total Tests**: 93 (38 midi_types + 26 bridge_core + 11 bridge_shell + 6 circle + 12 ffmpeg)
 - **Test Coverage**: 100% of functional core modules
-- **Regression Tests**: All passing (88/88 moderngl_renderer tests)
-- **New Files Created**: 7 (midi_types.py, midi_bridge_core.py, midi_bridge_shell.py, demo_midi_render.py + tests)
-- **Total Lines Added**: ~1,900 lines
+- **Regression Tests**: All passing (100/100 moderngl_renderer tests)
+- **New Files Created**: 9 (midi_types.py, midi_bridge_core.py, midi_bridge_shell.py, ffmpeg_encoder.py, demos + tests)
+- **Total Lines Added**: ~2,300 lines
 
 ### Success Criteria Met
 - [ ] Functional parity with PIL renderer

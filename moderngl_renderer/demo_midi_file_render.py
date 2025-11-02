@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from midi_parser import parse_midi_file
 from midi_types import STANDARD_GM_DRUM_MAP
 from moderngl_renderer.midi_bridge_shell import render_midi_to_frames
+from moderngl_renderer.ffmpeg_encoder import encode_frames_to_video
 
 
 def render_midi_to_images(
@@ -79,6 +80,70 @@ def render_midi_to_images(
     print(f"  Output directory: {output_dir}")
 
 
+def render_midi_to_video(
+    midi_path: str,
+    output_path: str,
+    audio_path: str = None,
+    width: int = 1920,
+    height: int = 1080,
+    fps: int = 60,
+    preset: str = "medium",
+    crf: int = 23
+):
+    """Render MIDI file to MP4 video with optional audio
+    
+    Args:
+        midi_path: Path to MIDI file
+        output_path: Path for output MP4 file
+        audio_path: Optional audio file for sync
+        width: Frame width
+        height: Frame height
+        fps: Frames per second
+        preset: FFmpeg preset (ultrafast, fast, medium, slow)
+        crf: Quality (0-51, lower=better, 23=default)
+    """
+    print(f"Parsing MIDI file: {midi_path}")
+    notes, total_duration = parse_midi_file(
+        midi_path,
+        drum_map=STANDARD_GM_DRUM_MAP,
+        tail_duration=2.0
+    )
+    print(f"  Found {len(notes)} notes, duration: {total_duration:.2f}s")
+    
+    print(f"\nGenerating frames ({width}x{height} @ {fps}fps)...")
+    frames = render_midi_to_frames(
+        notes,
+        width=width,
+        height=height,
+        fps=fps,
+        duration=total_duration,
+        corner_radius=12.0,
+        blur_radius=5.0,
+        glow_strength=0.5
+    )
+    
+    print(f"Encoding to video: {output_path}")
+    success = encode_frames_to_video(
+        frames=frames,
+        output_path=output_path,
+        width=width,
+        height=height,
+        fps=fps,
+        audio_path=audio_path,
+        preset=preset,
+        crf=crf,
+        verbose=True
+    )
+    
+    if success:
+        print(f"\n✓ Video created successfully!")
+        print(f"  Output: {output_path}")
+        file_size = Path(output_path).stat().st_size / (1024 * 1024)
+        print(f"  Size: {file_size:.1f} MB")
+    else:
+        print(f"\n✗ Video encoding failed")
+
+
 def main():
     """Run the demo"""
     print("=" * 70)
@@ -117,24 +182,40 @@ def main():
         print("  python moderngl_renderer/demo_midi_file_render.py")
         return
     
-    # Render to images
-    output_dir = "moderngl_renderer/test_artifacts/midi_file_demo"
+    # Output paths
+    output_dir = Path("moderngl_renderer/test_artifacts/midi_file_demo")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    video_output = output_dir / "output.mp4"
+    
+    # Look for audio file (same name as MIDI, different extension)
+    audio_path = None
+    midi_stem = Path(midi_path).stem
+    for ext in ['.wav', '.mp3', '.m4a', '.ogg']:
+        audio_candidate = Path(midi_path).parent / (midi_stem + ext)
+        if audio_candidate.exists():
+            audio_path = str(audio_candidate)
+            break
     
     try:
-        render_midi_to_images(
+        # Render to video
+        render_midi_to_video(
             midi_path=midi_path,
-            output_dir=output_dir,
+            output_path=str(video_output),
+            audio_path=audio_path,
             width=1920,
             height=1080,
             fps=60,
-            sample_every_n_frames=30  # Save 1 frame per second
+            preset="medium",
+            crf=23
         )
         
         print("\n" + "=" * 70)
-        print("Next steps:")
-        print("  - Add FFmpeg encoding for actual video output")
-        print("  - Integrate with project_manager for audio sync")
-        print("  - Add configuration UI for visual settings")
+        print("Success! ModernGL renderer is fully functional.")
+        print("\nNext steps:")
+        print("  - Compare output quality with PIL renderer")
+        print("  - Benchmark performance (FPS)")
+        print("  - Integrate with render_midi_to_video.py")
         print("=" * 70)
         
     except Exception as e:

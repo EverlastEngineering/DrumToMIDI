@@ -490,7 +490,7 @@ def save_frame(ctx: ModernGLContext, filepath: str) -> None:
         filepath: Output file path
     """
     frame = read_framebuffer(ctx)
-    img = Image.fromarray(frame, 'RGB')
+    img = Image.fromarray(frame)
     img.save(filepath)
 
 

@@ -138,32 +138,55 @@ def render_animation_to_frames(
     return frames
 
 
-def save_sample_frames(frames, output_dir="animation_samples"):
+def save_sample_frames(frames, output_dir=None):
     """Save sample frames for inspection"""
     
     from PIL import Image
-    output_path = Path(output_dir)
-    output_path.mkdir(exist_ok=True)
+    
+    if output_dir is None:
+        # Default to test_artifacts in moderngl_renderer directory
+        output_dir = Path(__file__).parent / "test_artifacts" / "animation_samples"
+    else:
+        output_dir = Path(output_dir)
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     # Save first, middle, and last frames
     sample_indices = [0, len(frames) // 2, len(frames) - 1]
     
     print(f"\nSaving sample frames to {output_dir}/...")
     for idx in sample_indices:
-        img = Image.fromarray(frames[idx], 'RGB')
-        filename = output_path / f"frame_{idx:04d}.png"
+        img = Image.fromarray(frames[idx])
+        filename = output_dir / f"frame_{idx:04d}.png"
         img.save(filename)
         print(f"  Saved {filename}")
 
 
-def create_video(frames, output_file="animation_demo.mp4", fps=60):
-    """Create video from frames using FFmpeg"""
+def save_frames_to_video(frames, output_path=None, fps=60):
+    """Create video from frames using FFmpeg
+    
+    Args:
+        frames: List of numpy arrays (H, W, 3)
+        output_path: Output video file path (defaults to test_artifacts/animation_demo.mp4)
+        fps: Frames per second
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    
+    if output_path is None:
+        # Default to test_artifacts in moderngl_renderer directory
+        artifacts_dir = Path(__file__).parent / "test_artifacts"
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
+        output_path = str(artifacts_dir / "animation_demo.mp4")
+    else:
+        output_path = str(output_path)
     
     import subprocess
     
     height, width = frames[0].shape[:2]
     
-    print(f"\nCreating video: {output_file}")
+    print(f"\nCreating video: {output_path}")
     print(f"  Resolution: {width}x{height}")
     print(f"  FPS: {fps}")
     print(f"  Frames: {len(frames)}")
@@ -183,7 +206,7 @@ def create_video(frames, output_file="animation_demo.mp4", fps=60):
         '-crf', '18',  # High quality
         '-preset', 'medium',
         '-pix_fmt', 'yuv420p',
-        output_file
+        output_path
     ]
     
     try:
@@ -237,17 +260,21 @@ def main():
     save_sample_frames(frames)
     
     # Create video
-    video_created = create_video(frames, output_file="animation_demo.mp4", fps=60)
+    artifacts_dir = Path(__file__).parent / "test_artifacts"
+    video_path = artifacts_dir / "animation_demo.mp4"
+    samples_dir = artifacts_dir / "animation_samples"
+    
+    video_created = save_frames_to_video(frames, output_path=str(video_path), fps=60)
     
     print("\n" + "="*60)
     if video_created:
         print("SUCCESS! Animation demo complete!")
-        print(f"  • Watch: animation_demo.mp4")
-        print(f"  • Samples: animation_samples/")
+        print(f"  • Watch: {video_path}")
+        print(f"  • Samples: {samples_dir}/")
     else:
         print("Animation frames rendered successfully!")
-        print("  • Samples: animation_samples/")
-        print("  • Install ffmpeg to create video")
+        print(f"  • Samples: {samples_dir}/")
+        print(f"  • Install ffmpeg to create video")
     print("="*60 + "\n")
 
 

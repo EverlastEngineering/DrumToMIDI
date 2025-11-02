@@ -27,8 +27,21 @@ import shutil
 from pathlib import Path
 
 # Import MIDI types and parser
-from midi_types import DrumNote, DrumMapping
+from midi_types import DrumNote, DrumMapping, STANDARD_GM_DRUM_MAP
 from midi_parser import parse_midi_file
+from midi_render_core import (
+    calculate_note_alpha,
+    calculate_brightness,
+    apply_brightness_to_color,
+    get_brighter_outline_color,
+    calculate_note_y_position,
+    calculate_highlight_zone,
+    is_note_in_highlight_zone,
+    calculate_strike_progress,
+    calculate_lookahead_time,
+    calculate_passthrough_time,
+    filter_and_remap_lanes
+)
 
 # Import project manager
 from project_manager import (
@@ -41,47 +54,9 @@ from project_manager import (
 
 
 # ============================================================================
-# FUNCTIONAL CORE: Pure functions for calculations
+# FUNCTIONAL CORE: Moved to midi_render_core.py
 # ============================================================================
-
-def calculate_note_alpha(time_until_hit: float, y_pos: float, strike_line_y: float, height: float) -> float:
-    """Pure function to calculate note transparency based on timing and position.
-    
-    Args:
-        time_until_hit: Seconds until note reaches strike line (negative = after hit)
-        y_pos: Current y position of note (pixels)
-        strike_line_y: Y position of strike line (pixels)
-        height: Total screen height (pixels)
-    
-    Returns:
-        Alpha multiplier from 0.0 to 1.0
-    """
-    # Before strike line: always fully opaque
-    if time_until_hit >= 0:
-        return 1.0
-    
-    # After strike line: fade from 100% to 20% as note travels to bottom
-    distance_after_strike = y_pos - strike_line_y
-    max_distance = height - strike_line_y
-    fade_progress = min(distance_after_strike / max_distance, 1.0)
-    return 1.0 - (0.8 * fade_progress)  # 1.0 → 0.2
-
-
-def calculate_brightness(velocity: int) -> float:
-    """Pure function: Convert MIDI velocity to brightness factor"""
-    return velocity / 127.0
-
-
-def apply_brightness_to_color(color: Tuple[int, int, int], brightness: float) -> Tuple[int, int, int]:
-    """Pure function: Apply brightness factor to RGB color"""
-    return tuple(int(c * brightness) for c in color)
-
-
-def get_brighter_outline_color(base_color: Tuple[int, int, int], alpha: int) -> Tuple[int, int, int, int]:
-    """Pure function: Calculate brighter outline color from base color"""
-    # Brighten each channel by adding 80% of remaining headroom to 255
-    bright_color = tuple(min(255, int(c + (255 - c) * 0.8)) for c in base_color)
-    return (*bright_color, alpha)
+# Pure functions now imported from midi_render_core module for shared use
 
 
 def pil_to_cv2(pil_image: Image.Image) -> np.ndarray:
@@ -254,24 +229,9 @@ def cv2_draw_highlight_circle(canvas: np.ndarray, center_x: int, center_y: int,
                (*bright_color, 255), outline_width, cv2.LINE_AA)
 
 
-# Standard GM Drum Map - adjust based on your MIDI files
-# Each MIDI note maps to a list of lane definitions (most have 1, but some can have multiple)
-# Kick drum (36) uses lane -1 to indicate it's drawn as a screen-wide bar
-DRUM_MAP = {
-    42: [{"name": "Hi-Hat Closed", "lane": 0, "color": (0, 255, 255)}],  # Cyan
-    44: [{"name": "Hi-Hat Foot Close", "lane": 0, "color": (15, 128, 40)}], # Dark Blue?
-    46: [{"name": "Hi-Hat Open", "lane": 1, "color": (30, 255, 80)}],     # Light Blue 
-    38: [{"name": "Snare", "lane": 2, "color": (255, 0, 0)}],       # Red
-    40: [{"name": "Snare Rim", "lane": 2, "color": (255, 0, 255)}],   # Dark Red
-    39: [{"name": "Clap", "lane": 3, "color": (255, 128, 128)}],
-    49: [{"name": "Left Cymbal", "lane": 4, "color": (0, 80, 255)}],     # Dark Orange
-    47: [{"name": "Tom 1", "lane": 5, "color": (0, 255, 0)}],       # Green
-    48: [{"name": "Tom 2", "lane": 6, "color": (0, 150, 0)}],       # Dark Green
-    50: [{"name": "Tom 3", "lane": 7, "color": (140, 0, 140)}],     # Magenta
-    36: [{"name": "Kick", "lane": -1, "color": (255, 140, 90)}],     # Yellow - Special: screen-wide bar
-    57: [{"name": "Right Cymbal", "lane": 8, "color": (0, 100, 255)}],     # Orange
-    54: [{"name": "Ride", "lane": 9, "color": (100, 150, 250)}],    # Light Orange
-}
+# Use shared drum map from midi_types module
+# This ensures consistency across all renderers
+DRUM_MAP = STANDARD_GM_DRUM_MAP
 
 
 class MidiVideoRenderer:
@@ -333,8 +293,9 @@ class MidiVideoRenderer:
         """
         time_until_hit = note.time - current_time
         
-        # Calculate position using float math, only round at the end for pixel coordinates
-        y_pos_float = self.strike_line_y - (time_until_hit * self.pixels_per_second)
+        # Calculate position using pure function
+        y_pos_float = calculate_note_y_position(note.time, current_time, 
+                                                 self.strike_line_y, self.pixels_per_second)
         y_pos = int(round(y_pos_float))
         
         # Calculate alpha and brightness using functional core
@@ -474,40 +435,19 @@ class MidiVideoRenderer:
     
     def should_draw_highlight(self, note: DrumNote, current_time: float) -> bool:
         """Check if highlight circle should be drawn for this note (pixel-based)"""
-        time_until_hit = note.time - current_time
-        y_pos = int(round(self.strike_line_y - (time_until_hit * self.pixels_per_second)))
-        note_top = y_pos - self.note_height
-        note_bottom = y_pos
-        note_center_y = (note_top + note_bottom) // 2
-        
-        # Show highlight when note center is within 1.5x note height of strike line (longer duration)
-        highlight_zone_height = int(self.note_height * 1.5)
-        highlight_zone_start = self.strike_line_y - highlight_zone_height // 2
-        highlight_zone_end = self.strike_line_y + highlight_zone_height // 2
-        
-        return highlight_zone_start <= note_center_y <= highlight_zone_end
+        return is_note_in_highlight_zone(
+            note, current_time, self.strike_line_y, self.note_height, 
+            self.pixels_per_second, zone_multiplier=1.5
+        )
     
     def calculate_strike_animation_progress(self, note: DrumNote, current_time: float) -> float:
         """Calculate 0.0-1.0 animation progress for strike effects
         0.0 = just entered strike zone, 1.0 = leaving strike zone
         """
-        time_until_hit = note.time - current_time
-        y_pos = int(round(self.strike_line_y - (time_until_hit * self.pixels_per_second)))
-        note_top = y_pos - self.note_height
-        note_bottom = y_pos
-        note_center_y = (note_top + note_bottom) // 2
-        
-        highlight_zone_height = int(self.note_height * 1.5)
-        highlight_zone_start = self.strike_line_y - highlight_zone_height // 2
-        highlight_zone_end = self.strike_line_y + highlight_zone_height // 2
-        
-        # Calculate position within the zone (0.0 to 1.0)
-        if note_center_y < highlight_zone_start:
-            return 0.0
-        elif note_center_y > highlight_zone_end:
-            return 1.0
-        else:
-            return (note_center_y - highlight_zone_start) / (highlight_zone_end - highlight_zone_start)
+        return calculate_strike_progress(
+            note, current_time, self.strike_line_y, self.note_height,
+            self.pixels_per_second, zone_multiplier=1.5
+        )
     
     def draw_highlight_circle(self, draw: ImageDraw.ImageDraw, note: DrumNote, current_time: float, first_highlight_frame: set):
         """Draw the strike line highlight circle for a note with smooth pulsing animation
@@ -725,37 +665,16 @@ class MidiVideoRenderer:
         # Track which MIDI notes are actually used (for legend filtering)
         used_midi_notes = set(note.midi_note for note in notes)
         
-        # Filter out empty lanes - detect which lanes actually have notes
-        used_lanes = set(note.lane for note in notes if note.lane >= 0)
+        # Filter out empty lanes using shared core function
+        notes, num_used_lanes = filter_and_remap_lanes(notes)
         
-        if used_lanes and len(used_lanes) < self.num_lanes:
-            # Create mapping from original lane numbers to consecutive positions
-            sorted_used_lanes = sorted(used_lanes)
-            lane_mapping = {original: new for new, original in enumerate(sorted_used_lanes)}
-            
-            # Remap note lanes to consecutive positions (create new instances since DrumNote is frozen)
-            remapped_notes = []
-            for note in notes:
-                if note.lane >= 0:
-                    remapped_notes.append(DrumNote(
-                        midi_note=note.midi_note,
-                        time=note.time,
-                        velocity=note.velocity,
-                        lane=lane_mapping[note.lane],
-                        color=note.color,
-                        name=note.name
-                    ))
-                else:
-                    remapped_notes.append(note)
-            notes = remapped_notes
-            
-            # Update number of lanes and recalculate note width
+        if num_used_lanes > 0 and num_used_lanes < self.num_lanes:
+            # Update layout for filtered lanes
             original_num_lanes = self.num_lanes
-            self.num_lanes = len(used_lanes)
+            self.num_lanes = num_used_lanes
             self.note_width = self.width // self.num_lanes
-            
-            print(f"Filtered lanes: using {self.num_lanes} of {original_num_lanes} lanes (lanes {sorted_used_lanes})")
-        elif not used_lanes:
+            print(f"Filtered lanes: using {self.num_lanes} of {original_num_lanes} lanes")
+        elif num_used_lanes == 0:
             print(f"Warning: No regular lane notes found (only kick drum or empty MIDI)")
             # Set to 1 lane minimum to avoid division by zero
             self.num_lanes = 1
@@ -820,11 +739,10 @@ class MidiVideoRenderer:
         
         # Pre-calculate time step to avoid floating point accumulation errors
         time_step = 1.0 / self.fps
-        # Calculate lookahead time based on screen height and fall speed
-        # Notes should appear at top of screen (y=0) and fall to strike line
-        # Distance to travel = strike_line_y pixels
-        # Time needed = distance / speed
-        lookahead_time = self.strike_line_y / self.pixels_per_second
+        # Calculate lookahead and passthrough times using core functions
+        lookahead_time = calculate_lookahead_time(self.strike_line_y, self.pixels_per_second)
+        passthrough_time = calculate_passthrough_time(self.height, self.strike_line_y, 
+                                                       self.note_height, self.pixels_per_second)
         note_index = 0  # Track which notes we need to check
         first_highlight_frame = set()  # Track which notes are showing highlight for first time
         
@@ -846,9 +764,6 @@ class MidiVideoRenderer:
             
             # Draw visible notes - only check notes in the visible time window
             # Start from first note that hasn't passed completely
-            # Calculate time needed for note to pass off bottom of screen
-            passthrough_time = (self.height - self.strike_line_y + self.note_height) / self.pixels_per_second
-            
             visible_start = note_index
             for i in range(visible_start, len(notes)):
                 note = notes[i]

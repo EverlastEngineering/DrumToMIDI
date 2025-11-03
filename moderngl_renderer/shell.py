@@ -98,8 +98,8 @@ void main() {
     // ANIMATED GEM EFFECT WITH SPARKLES
     // =====================================================================
     
-    // World light source at center of screen (0, 0)
-    vec2 light_pos = vec2(0.0, 0.0);
+    // World light source at strike line (y = -0.6, center of screen horizontally)
+    vec2 light_pos = vec2(0.0, -0.6);
     float dist_to_light = length(v_world_pos - light_pos);
     
     // Light falloff (pronounced for testing - stronger effect)
@@ -154,8 +154,27 @@ void main() {
     gem_color += vec3(sparkle);                             // Add subtle sparkle flashes (only below strike)
     gem_color += vec3(shimmer);                             // Add very subtle shimmer waves (only below strike)
     
-    // Replace color with gray outline in outline region
-    vec3 outline_color = vec3(0.6, 0.6, 0.6);  // Gray outline (less bright)
+    // Directional outline lighting based on position relative to strike line
+    // Calculate direction from current pixel to strike line
+    vec2 to_light = vec2(0.0, -0.6) - v_world_pos;
+    float light_distance = length(to_light);
+    vec2 light_direction = to_light / light_distance;
+    
+    // Calculate the rectangle's center in world coords
+    vec2 rect_center = vec2(v_rect.x + v_rect.z * 0.5, v_rect.y + v_rect.w * 0.5);
+    
+    // Calculate normal from rect center to current pixel (points outward from rect)
+    vec2 pixel_world = v_world_pos;
+    vec2 from_rect_center = pixel_world - rect_center;
+    vec2 outline_normal = normalize(from_rect_center);
+    
+    // Calculate how much the outline pixel faces the light (dot product)
+    float facing_light = max(0.0, dot(outline_normal, light_direction));
+    
+    // Modulate outline brightness based on facing direction
+    float outline_brightness = 0.3 + 0.5 * facing_light;  // Range: 0.3 to 0.8
+    vec3 outline_color = vec3(outline_brightness);
+    
     gem_color = mix(gem_color, outline_color, is_outline);
     
     f_color = vec4(gem_color, alpha);

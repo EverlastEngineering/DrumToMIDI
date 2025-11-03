@@ -319,11 +319,10 @@ def render_midi_to_video_moderngl(
         elif verbose:
             print(f"⚠️  Warning: Audio file not found: {audio_path}")
     
-    # Output settings
+    # Output settings - Use VideoToolbox hardware encoder on macOS
     ffmpeg_cmd.extend([
-        '-c:v', 'libx264',
-        '-preset', 'fast',
-        '-crf', '18',
+        '-c:v', 'h264_videotoolbox',
+        '-b:v', '2M',  # 10 Mbps bitrate (high quality)
         '-pix_fmt', 'yuv420p',
         str(output_path)
     ])
@@ -376,13 +375,17 @@ def render_midi_to_video_moderngl(
                     rect = _midi_note_to_rectangle(note, current_time)
                     note_rectangles.append(rect)
                 
-                # Render all rectangles without glow (direct rendering)
+                # Render in layers: background -> lane markers -> notes -> UI
                 ctx.ctx.clear(0.0, 0.0, 0.0)  # Black background
-                all_rectangles = []
-                all_rectangles.extend(note_rectangles)
-                all_rectangles.extend(lane_markers)
-                all_rectangles.append(strike_line)
-                render_rectangles_no_glow(ctx, all_rectangles, time=current_time)
+                
+                # Layer 1: Lane markers (behind everything)
+                render_rectangles_no_glow(ctx, lane_markers, time=current_time)
+                
+                # Layer 2: Notes (including kick drum)
+                render_rectangles_no_glow(ctx, note_rectangles, time=current_time)
+                
+                # Layer 3: Strike line (on top)
+                render_rectangles_no_glow(ctx, [strike_line], time=current_time)
                 
                 frame = read_framebuffer(ctx)
                 

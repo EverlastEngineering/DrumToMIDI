@@ -105,6 +105,8 @@ python render_midi_to_video.py
 ```
 Creates Rock Band-style falling notes visualization in an MP4 video. I view this on my phone while I play along on my Roland drum kit.
 
+**Note:** On macOS, GPU-accelerated ModernGL rendering is used by default (1.7-2x real-time speedup). To use the legacy PIL renderer, add `--no-moderngl`.
+
 # Further Information
 
 For deeper details on each part of the pipeline, see:

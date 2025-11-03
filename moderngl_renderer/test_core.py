@@ -96,17 +96,19 @@ class TestRectangleDataTransformations:
              'color': (0, 1, 0), 'brightness': 0.5},
         ]
         
-        colors, rects, sizes = batch_rectangle_data(rectangles, 1920, 1080)
+        colors, rects, sizes, flags = batch_rectangle_data(rectangles, 1920, 1080)
         
         # Check array shapes
         assert colors.shape == (2, 3)
         assert rects.shape == (2, 4)
         assert sizes.shape == (2, 2)
+        assert flags.shape == (2,)
         
         # Check array dtypes
         assert colors.dtype == np.float32
         assert rects.dtype == np.float32
         assert sizes.dtype == np.float32
+        assert flags.dtype == np.float32
         
         # Check first rectangle color (full brightness red)
         np.testing.assert_array_equal(colors[0], [1.0, 0.0, 0.0])

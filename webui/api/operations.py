@@ -8,6 +8,7 @@ All operations run asynchronously via the job queue.
 from flask import jsonify, request # type: ignore
 from pathlib import Path
 import sys
+import platform
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -87,7 +88,7 @@ def run_stems_to_midi(project_number: int, **kwargs):
 
 def run_render_video(project_number: int, fps: int = 60, width: int = 1920, height: int = 1080, 
                      audio_source: str = 'original', include_audio: bool = None, fall_speed_multiplier: float = 1.0,
-                     use_moderngl: bool = False):
+                     use_moderngl: bool = None):
     """
     Execute MIDI to video rendering for a project.
     
@@ -97,10 +98,14 @@ def run_render_video(project_number: int, fps: int = 60, width: int = 1920, heig
         audio_source: Audio source - None, 'original', or 'alternate_mix/{filename}'
         include_audio: DEPRECATED - kept for backward compatibility
         fall_speed_multiplier: Note fall speed multiplier (1.0 = default)
-        use_moderngl: Use GPU-accelerated ModernGL renderer (default: False)
+        use_moderngl: Use GPU-accelerated ModernGL renderer (default: True on macOS, False otherwise)
     """
     from render_midi_to_video import render_project_video
     from project_manager import get_project_by_number, USER_FILES_DIR
+    
+    # Auto-detect ModernGL on macOS if not explicitly specified
+    if use_moderngl is None:
+        use_moderngl = platform.system() == 'Darwin'
     
     project = get_project_by_number(project_number, USER_FILES_DIR)
     if project is None:
@@ -373,7 +378,7 @@ def render_video():
             "audio_source": null # optional: null, 'original', or 'alternate_mix/{filename}'
             "include_audio": false,  # DEPRECATED: use audio_source instead
             "fall_speed_multiplier": 1.0,  # optional: 0.5-2.0, controls note fall speed
-            "use_moderngl": false  # optional: use GPU-accelerated renderer
+            "use_moderngl": null  # optional: use GPU-accelerated renderer (default: true on macOS)
         }
         
     Returns:
@@ -408,7 +413,7 @@ def render_video():
         audio_source = data.get('audio_source', None)
         include_audio = data.get('include_audio', None)  # Deprecated but still supported
         fall_speed_multiplier = data.get('fall_speed_multiplier', 1.0)
-        use_moderngl = data.get('use_moderngl', False)
+        use_moderngl = data.get('use_moderngl', None)  # None allows platform detection
         
         # Submit job
         job_queue = get_job_queue()

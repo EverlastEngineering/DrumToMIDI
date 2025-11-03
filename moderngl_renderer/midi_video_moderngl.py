@@ -34,167 +34,11 @@ from moderngl_renderer.midi_animation import (
     calculate_note_y_at_time
 )
 from moderngl_renderer.shell import ModernGLContext, render_rectangles, render_rectangles_no_glow, read_framebuffer
-
-
-def _calculate_strike_effect(
-    y_center: float,
-    strike_line_y: float = -0.6,
-    strike_window: float = 0.04
-) -> tuple:
-    """Calculate strike effect parameters
-    
-    Args:
-        y_center: Note center Y position in normalized coords
-        strike_line_y: Strike line Y position
-        strike_window: Time window around strike line (in normalized units)
-    
-    Returns:
-        (scale_factor, flash_alpha, brightness_boost)
-    """
-    # Distance from strike line (negative = below, positive = above)
-    distance = y_center - strike_line_y
-    
-    # Check if within strike window
-    if abs(distance) > strike_window:
-        return 1.0, 0.0, 0.0
-    
-    # Calculate position within strike window (0.0 at edges, 1.0 at center)
-    progress = 1.0 - abs(distance) / strike_window
-    
-    # Scale pulse: 1.0 → 1.3 → 1.0 (stronger height increase)
-    scale_factor = 1.0 + 0.3 * progress * progress
-    
-    # Flash: peaks at strike line, fades at edges (more intense)
-    flash_alpha = 1.5 * progress * progress * progress
-    
-    # Brightness boost for enhanced glow (stronger)
-    brightness_boost = 0.7 * progress
-    
-    return scale_factor, flash_alpha, brightness_boost
-
-
-def _midi_note_to_rectangle(
-    anim_note: Any,
-    current_time: float,
-    strike_line_y: float = -0.6
-) -> Dict[str, Any]:
-    """Convert MidiAnimationNote to rectangle format for rendering
-    
-    Args:
-        anim_note: MidiAnimationNote from midi_animation.py
-        current_time: Current playback time in seconds
-        strike_line_y: Strike line Y position in normalized coords
-    
-    Returns:
-        Rectangle dict with x, y, width, height, color
-        
-    Note:
-        shell.py expects 'y' to be the TOP-LEFT corner in OpenGL coords
-        (higher Y = top of screen), and converts to bottom-left internally.
-    """
-    y_center = calculate_note_y_at_time(anim_note, current_time, strike_line_y)
-    
-    # Calculate strike effect
-    scale_factor, flash_alpha, brightness_boost = _calculate_strike_effect(
-        y_center, strike_line_y
-    )
-    
-    # Base brightness from velocity
-    base_brightness = 0.3 + (anim_note.velocity / 127.0) * 0.7
-    
-    # Fade out after passing strike line
-    if y_center < strike_line_y:
-        # Note has passed strike line (y_center is below strike_line_y)
-        # In OpenGL: lower Y = further down screen
-        distance_past_strike = strike_line_y - y_center
-        
-        # Fade over 0.3 normalized units (~15% of screen height)
-        fade_distance = 0.3
-        fade_factor = 1.0 - min(distance_past_strike / fade_distance, 1.0)
-        
-        brightness = base_brightness * fade_factor
-    else:
-        brightness = base_brightness
-    
-    # Apply strike brightness boost
-    brightness = min(1.0, brightness + brightness_boost)
-    
-    # Apply flash effect (mix towards white)
-    base_color = tuple(c * brightness for c in anim_note.color)
-    if flash_alpha > 0:
-        color = tuple(
-            c * (1.0 - flash_alpha) + flash_alpha
-            for c in base_color
-        )
-    else:
-        color = base_color
-    
-    # Apply scale factor to height only (not width)
-    scaled_width = anim_note.width
-    scaled_height = anim_note.height * scale_factor
-    
-    # Calculate top-left corner from center position (accounting for scale)
-    # In OpenGL: higher Y = top, so top = center + height/2
-    y_top = y_center + scaled_height / 2.0
-    x_left = anim_note.x - scaled_width / 2.0
-    
-    return {
-        'x': x_left,
-        'y': y_top,
-        'width': scaled_width,
-        'height': scaled_height,
-        'color': color,
-        'no_outline': anim_note.is_kick  # Skip outline for kick drum
-    }
-
-
-def _add_strike_line_rectangle(
-    strike_line_y: float = -0.6,
-    thickness: float = 0.01
-) -> Dict[str, Any]:
-    """Create strike line rectangle
-    
-    Args:
-        strike_line_y: Y position in normalized coords
-        thickness: Line thickness in normalized coords
-    
-    Returns:
-        Rectangle dict for strike line
-    """
-    return {
-        'x': -1.0,
-        'y': strike_line_y - thickness / 2.0,
-        'width': 2.0,
-        'height': thickness,
-        'color': (1.0, 1.0, 1.0),  # White
-        'no_outline': True  # Skip outline for UI elements
-    }
-
-
-def _add_lane_markers(num_lanes: int = 3) -> List[Dict[str, Any]]:
-    """Create vertical lane marker rectangles
-    
-    Args:
-        num_lanes: Number of lanes (determines marker spacing)
-    
-    Returns:
-        List of rectangle dicts for lane markers
-    """
-    markers = []
-    lane_width = 2.0 / num_lanes
-    
-    for i in range(num_lanes + 1):
-        x = -1.0 + i * lane_width
-        markers.append({
-            'x': x - 0.005,
-            'y': 1.0,  # Top of screen
-            'width': 0.01,
-            'height': 2.0,
-            'color': (0.3, 0.3, 0.3),  # Dark gray
-            'no_outline': True  # Skip outline for UI elements
-        })
-    
-    return markers
+from moderngl_renderer.midi_video_core import (
+    midi_note_to_rectangle,
+    create_strike_line_rectangle,
+    create_lane_markers
+)
 
 
 def render_midi_to_video_moderngl(
@@ -362,8 +206,8 @@ def render_midi_to_video_moderngl(
                 print()
             
             # Pre-build static elements (rendered once, reused every frame)
-            lane_markers = _add_lane_markers(num_lanes)
-            strike_line = _add_strike_line_rectangle()
+            lane_markers = create_lane_markers(num_lanes)
+            strike_line = create_strike_line_rectangle()
             
             for frame_num in range(total_frames):
                 current_time = frame_num / fps
@@ -372,7 +216,19 @@ def render_midi_to_video_moderngl(
                 note_rectangles = []
                 visible = get_visible_notes_at_time(anim_notes, current_time)
                 for note in visible:
-                    rect = _midi_note_to_rectangle(note, current_time)
+                    # Calculate Y position
+                    y_center = calculate_note_y_at_time(note, current_time)
+                    
+                    # Convert to rectangle using functional core
+                    rect = midi_note_to_rectangle(
+                        x=note.x,
+                        y_center=y_center,
+                        width=note.width,
+                        height=note.height,
+                        color=note.color,
+                        velocity=note.velocity,
+                        is_kick=note.is_kick
+                    )
                     note_rectangles.append(rect)
                 
                 # Render in layers: background -> lane markers -> notes -> UI

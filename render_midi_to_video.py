@@ -15,6 +15,7 @@ Usage:
 """
 
 import argparse
+import platform
 import mido # type: ignore
 import cv2 # type: ignore
 import numpy as np # type: ignore
@@ -1223,10 +1224,21 @@ Examples:
                        help='Note fall speed multiplier (default: 1.0, range: 0.5-2.0)')
     parser.add_argument('--use-opencv', action='store_true',
                        help='Use OpenCV for rendering (experimental performance optimization)')
-    parser.add_argument('--use-moderngl', action='store_true',
-                       help='Use GPU-accelerated ModernGL renderer (faster, recommended)')
+    parser.add_argument('--use-moderngl', action='store_true', default=None,
+                       help='Use GPU-accelerated ModernGL renderer (default on macOS)')
+    parser.add_argument('--no-moderngl', action='store_true',
+                       help='Disable ModernGL renderer and use PIL (slower)')
     
     args = parser.parse_args()
+    
+    # Auto-detect platform and set ModernGL default
+    if args.use_moderngl is None:
+        # Default to ModernGL on macOS (has GPU acceleration)
+        args.use_moderngl = platform.system() == 'Darwin'
+    
+    # Override if user explicitly disabled ModernGL
+    if args.no_moderngl:
+        args.use_moderngl = False
     
     # Select project
     if args.project_number is not None:

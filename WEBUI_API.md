@@ -399,7 +399,8 @@ Create Rock Band-style falling notes visualization from MIDI file with optional 
   "fps": 60,                    // optional: Frame rate (default: 60)
   "width": 1920,                // optional: Video width (default: 1920)
   "height": 1080,               // optional: Video height (default: 1080)
-  "audio_source": "original"    // optional: Audio selection (default: null)
+  "audio_source": "original",   // optional: Audio selection (default: null)
+  "use_moderngl": null          // optional: GPU renderer (default: true on macOS)
 }
 ```
 
@@ -418,6 +419,10 @@ Create Rock Band-style falling notes visualization from MIDI file with optional 
   - `null` or omitted: No audio (video only)
   - `"original"`: Use original project audio file
   - `"alternate_mix/{filename}"`: Use alternate audio file
+- `use_moderngl`: GPU-accelerated rendering (1.7-2x faster):
+  - `null` or omitted: Auto-detect (enabled on macOS, disabled elsewhere)
+  - `true`: Force enable GPU rendering (requires ModernGL)
+  - `false`: Force disable GPU rendering (use CPU fallback)
 
 **Audio Examples:**
 ```json

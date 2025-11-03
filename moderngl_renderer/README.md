@@ -24,14 +24,20 @@ Follows the **functional core, imperative shell** pattern:
 
 ### Command Line
 
-Use the `--use-moderngl` flag with `render_midi_to_video.py`:
+ModernGL rendering is **enabled by default on macOS**. On other platforms, use the `--use-moderngl` flag:
 
 ```bash
-# Render with ModernGL GPU renderer (recommended)
+# On macOS (default behavior)
+python render_midi_to_video.py 1
+
+# On Linux/Windows (enable ModernGL)
 python render_midi_to_video.py 1 --use-moderngl
 
+# Force legacy PIL renderer on any platform
+python render_midi_to_video.py 1 --no-moderngl
+
 # With custom settings
-python render_midi_to_video.py 1 --use-moderngl --fps 60 --fall-speed 1.5
+python render_midi_to_video.py 1 --fps 60 --fall-speed 1.5
 ```
 
 ### Web UI

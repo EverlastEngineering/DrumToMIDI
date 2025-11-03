@@ -205,17 +205,17 @@ def test_note_y_position_interpolates_correctly():
         fall_duration=1.0
     )
     
-    # At start time, should be at top
+    # At start time, should be at top (note: y_start is slightly above 1.0 to start offscreen)
     y_at_start = calculate_note_y_at_time(anim_note, anim_note.start_time, -0.6)
-    assert y_at_start == pytest.approx(1.0, abs=0.01)
+    assert y_at_start == pytest.approx(anim_note.y_start, abs=0.01)
     
     # At hit time, should be at strike line
     y_at_hit = calculate_note_y_at_time(anim_note, anim_note.hit_time, -0.6)
     assert y_at_hit == pytest.approx(-0.6, abs=0.01)
     
-    # Halfway through, should be halfway down
+    # Halfway through, should be halfway down from y_start to strike_line
     y_at_half = calculate_note_y_at_time(anim_note, anim_note.start_time + 0.5, -0.6)
-    expected_half = 1.0 + (-0.6 - 1.0) * 0.5  # = 0.2
+    expected_half = anim_note.y_start + (-0.6 - anim_note.y_start) * 0.5
     assert y_at_half == pytest.approx(expected_half, abs=0.01)
 
 

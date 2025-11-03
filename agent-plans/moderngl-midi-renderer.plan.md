@@ -1,53 +1,67 @@
-# ModernGL MIDI Renderer Migration Plan
+# ModernGL MIDI Renderer Integration Plan
 
 **Date**: November 2, 2025  
-**Objective**: Migrate MIDI video rendering from PIL/OpenCV hybrid approach to pure ModernGL GPU rendering, eliminating PIL dependency entirely.
+**Objective**: Create a working ModernGL-based renderer that integrates with the existing MIDI video pipeline, using the proven architecture from `demo_animation.py`.
 
-## Current State
+## Lessons from Failed GPU-Resident Approach
 
-### demo_animation.py (Inspiration)
-- GPU-accelerated rendering via ModernGL
-- Follows functional core/imperative shell pattern
-- Uses test note data (hardcoded drum pattern)
-- Renders to numpy array frames, then saves to video via FFmpeg
-- Clean separation: `core.py` (pure functions), `shell.py` (GPU ops), `animation.py` (timing math)
-- Already has animation system with note visibility windows and frame scene building
+### What Went Wrong
+- Attempted to build "GPU-resident" architecture with pixel-space calculations
+- Mixed coordinate systems (pixel space in Python, OpenGL NDC in shaders)
+- Over-engineered coordinate conversions caused unfixable bugs
+- Notes appeared at wrong positions, moved at half speed, only covered half screen
+- 10+ fix attempts, all failed - every change either broke things worse or had no effect
 
-### render_midi_to_video.py (Current Production)
-- 1,324 lines - monolithic file structure
-- Uses PIL for drawing with rounded rectangles and alpha blending
-- OpenCV for canvas operations and video encoding
-- Full MIDI parsing with tempo map support
-- Complex lane management and note rendering logic
-- Supports kick drum (screen-wide bars) and regular note lanes
-- Has motion blur, highlight circles, fade effects
-- Includes project management integration
-- **Critical**: Has tests via `test_cv2_rendering.py` that must not break
+### What Actually Works
+- `moderngl_renderer/demo_animation.py` - Renders successfully at 193 FPS (4.8x speedup)
+- `moderngl_renderer/animation.py` - Pure functional core with correct coordinate math
+- `moderngl_renderer/shell.py` - Simple imperative shell using normalized coords directly
+- **Key insight**: Use OpenGL normalized coordinates (-1 to +1) throughout, no pixel conversions
 
-### Key Functional Differences
-1. **MIDI Parsing**: `render_midi_to_video.py` has sophisticated tempo map parsing - `demo_animation.py` uses simple test notes
-2. **Lane Management**: Production code has complex drum mapping, lane filtering, kick drum special handling
-3. **Visual Effects**: Production has motion blur, highlight pulses, velocity-based brightness, alpha fading
-4. **Output Integration**: Production integrates with project manager, audio sync, FFmpeg with audio tracks
+## Architecture Decision
+
+**Use the working `animation.py` + `shell.py` approach, NOT the broken gpu_resident_*.py code.**
+
+The working demo was RIGHT THERE the whole time. We should have adapted it instead of rewriting from scratch.
+
+## Current State Analysis
+
+### What Works ✓
+- `demo_animation.py` successfully renders animated notes with timing
+- Normalized OpenGL coordinates used consistently throughout
+- No complex coordinate space conversions
+- Clean functional core / imperative shell separation
+- Proven 4.8x speedup over PIL baseline
+
+### What's Broken ✗
+- `gpu_resident_core.py`, `gpu_resident_shaders.py`, `gpu_resident_shell.py`
+- Coordinate system bugs from pixel↔normalized conversions
+- Time-animated shaders never worked correctly
+- Over-engineered architecture
+
+### Key Principle
+**Keep everything in normalized OpenGL coordinates from start to finish.**  
+Don't try to be clever with pixel-space calculations - that's what killed the GPU-resident approach.
 
 ## Success Criteria
 
-1. **Functional Parity**: New ModernGL renderer produces visually identical output to current PIL/OpenCV renderer
-2. **Performance**: Achieves >100 FPS rendering (vs current ~40 FPS with PIL)
-3. **No Breaking Changes**: All existing tests pass without modification
-4. **Clean Architecture**: Maintains functional core/imperative shell separation
-5. **No PIL Dependency**: Zero PIL imports in rendering pipeline
+1. **Functional Parity**: ModernGL renderer produces visually identical output to PIL renderer
+2. **Performance**: Achieves 3-5x speedup over PIL (demo already proves this is achievable)
+3. **No Coordinate Bugs**: Notes appear at correct positions, move at correct speed, cover full screen
+4. **Audio Sync**: Perfect synchronization with audio track
+5. **Clean Architecture**: Maintains functional core/imperative shell separation
 
 ## Risks & Mitigation
 
-### High Risk: Breaking Existing Tests
-- **Mitigation**: Extract and test each component independently before integration
-- **Strategy**: Create new modules alongside existing code, run parallel testing
-- **Validation**: Use `test_cv2_rendering.py` as regression test suite
+### High Risk: Reintroducing Coordinate Bugs
+- **Cause**: Mixing pixel and normalized coordinate systems
+- **Mitigation**: Work in normalized coords exclusively, follow demo_animation.py pattern exactly
+- **Validation**: Compare output frame-by-frame with PIL renderer
 
-### Medium Risk: Visual Fidelity Differences
-- **Issue**: GPU rendering may have subtle differences in anti-aliasing, alpha blending
-- **Mitigation**: Create baseline comparison tests with tolerance thresholds
+### Medium Risk: Over-Engineering
+- **Cause**: Attempting optimizations before basic functionality works
+- **Mitigation**: Get it working first, optimize later (Phase 4)
+- **Rule**: Any optimization must not break coordinate system
 - **Strategy**: Use regression test approach from `how-to-perform-testing.instructions.md`
 
 ### Medium Risk: Feature Complexity
@@ -102,285 +116,280 @@ These should go into new core modules:
 
 ## Implementation Phases
 
-### Phase 0: Establish Data Contract (COMPLETED ✓)
-**Goal**: Define shared types between MIDI parsing and rendering  
-**Duration**: 1 phase  
-**Risk**: Low - pure type definitions with no side effects
+### Phase 1: Adapt animation.py for MIDI Data
+**Goal**: Make the working animation system accept DrumNote input  
+**Duration**: 2-4 hours  
+**Risk**: Low - extending working code
 
 **Tasks**:
-1. ✓ Create `midi_types.py` with shared data contract
-2. ✓ Define `MidiNote` (renderer-agnostic), `DrumNote` (with rendering metadata)
-3. ✓ Define `DrumMapping` and `MidiSequence` types
-4. ✓ Include `STANDARD_GM_DRUM_MAP` configuration
-5. ✓ Add conversion/validation helper functions
-6. ✓ Create comprehensive test suite (38 tests)
+1. Create `midi_animation.py` bridge module
+   - Convert `List[DrumNote]` → animation-compatible note format
+   - Map MIDI lanes to normalized X positions (-1 to +1 range)
+   - Calculate note colors from MIDI drum mapping data
+   - Handle kick drum (lane -1) as full-width bar
+
+2. Add strike line and visual elements to shell.py
+   - Render strike line at y = -0.6 (85% down in normalized coords)
+   - Add vertical lane markers
+   - Add background lane coloring
+
+3. Test with simple MIDI file
+   - Use project 13 (srdrums) which has 63 notes, 14s duration
+   - Verify notes appear at correct positions
+   - Verify notes fall at correct speed
+   - Compare with PIL renderer output frame-by-frame
 
 **Validation**:
-- [x] All type tests pass (38/38 passing in 0.05s)
-- [x] Immutability enforced (frozen dataclasses)
-- [x] Clear documentation of contract
-- [x] No breaking changes to existing code
+- [ ] Notes render at correct X positions for each lane
+- [ ] Notes appear at top of screen and fall to strike line
+- [ ] Strike line visible at 85% down (y = -0.6 normalized)
+- [ ] Output visually matches PIL renderer
+- [ ] No coordinate system bugs
 
-**Results**: See `moderngl-midi-renderer.results.md` Phase 0
+**Coordinate Conversion Reference**:
+```python
+# If you must convert from existing PIL pixel-based code:
+def pixel_to_normalized_y(pixel_y, height):
+    """Convert PIL pixel Y (0=top) to OpenGL normalized (-1=bottom, +1=top)"""
+    normalized_progress = pixel_y / height  # 0.0 to 1.0
+    screen_height_norm = 2.0  # Range from -1 to +1
+    return 1.0 - (normalized_progress * screen_height_norm)
 
-### Phase 1: Extract Core Functions (No GPU Work)
-**Goal**: Extract and test MIDI parsing and calculation logic  
-**Duration**: 1 phase  
-**Risk**: Low - pure refactoring with existing tests
+# Strike line example:
+# PIL: y_pixels = 918 (at 85% down)
+# OpenGL: y_norm = 1.0 - (918/1080) * 2.0 = -0.7
+```
+
+**But better**: Work in normalized coordinates from the start, avoid pixel conversions entirely.
+
+### Phase 2: Integrate with render_midi_to_video.py
+**Goal**: Make `--use-moderngl` flag use the working animation approach  
+**Duration**: 2-3 hours  
+**Risk**: Low - integrating tested components
 
 **Tasks**:
-1. Create `midi_core.py` with MIDI parsing functions extracted from render_midi_to_video.py
-2. Update parsing to use `MidiNote` and `DrumNote` types from `midi_types.py`
-3. Create `midi_effects.py` with effect calculation functions
-4. Add comprehensive unit tests for all extracted functions
-5. Ensure `test_cv2_rendering.py` still passes (render_midi_to_video.py unchanged)
+1. Create `render_midi_moderngl()` function
+   - Accept same parameters as PIL renderer (width, height, fps, config, etc.)
+   - Use `animation.py` + `shell.py` under the hood
+   - Stream frames directly to FFmpeg encoder
+
+2. Handle audio synchronization
+   - Ensure frame timing matches audio exactly
+   - No lookahead time offset - start at t=0 like PIL renderer
+   - Verify sync doesn't drift over long videos
+
+3. Add progress reporting
+   - Match PIL renderer's progress output format
+   - Show FPS, frame count, estimated time remaining
+   - Don't spam console - update every second
 
 **Validation**:
-- [ ] All extracted functions have unit tests
-- [ ] Parsing produces `MidiNote` → `DrumNote` conversions correctly
-- [ ] `pytest test_cv2_rendering.py` passes
-- [ ] No functionality changes to render_midi_to_video.py
+- [ ] `python render_midi_to_video.py 13 --use-moderngl` produces correct output
+- [ ] Video matches PIL renderer output visually (frame-by-frame comparison)
+- [ ] Audio stays synchronized throughout entire video
+- [ ] Achieves 3-5x speedup over PIL renderer
+- [ ] Progress output is clear and helpful
 
-### Phase 2: Extend Animation System for MIDI
-**Goal**: Adapt animation.py to handle MIDI notes instead of test data  
-**Duration**: 1 phase  
-**Risk**: Low - building on proven animation system
+### Phase 3: Add Missing Visual Elements
+**Goal**: Match all features of PIL renderer  
+**Duration**: 3-4 hours  
+**Risk**: Medium - shader complexity
 
 **Tasks**:
-1. Add MIDI note structure to `animation.py` (compatible with DrumNote dataclass)
-2. Extend `build_frame_scene()` to handle kick drum (screen-wide bars)
-3. Add lane-based positioning functions
-4. Create integration tests with real MIDI files
+1. Legend layer
+   - Show instrument names with colors
+   - Position in corner like PIL version
+   - Render as texture overlay
+
+2. Progress bar / time display
+   - Current time and total duration
+   - Progress percentage bar
+   - Text rendering via texture
+
+3. Highlight circles at strike line
+   - Glow effect when notes hit strike line
+   - Fade out animation over ~200ms
+   - Layer multiple circles with alpha for glow
 
 **Validation**:
-- [ ] `test_animation.py` passes with new MIDI note types
-- [ ] Frame scenes correctly represent kick drums and regular lanes
-- [ ] Existing demo_animation.py still works
+- [ ] Feature parity with PIL renderer - all visual elements present
+- [ ] Text is readable and properly positioned
+- [ ] Highlights appear at correct timing
+- [ ] Still maintains 3-5x performance advantage
 
-### Phase 3: Implement GPU Effects (Shaders)
-**Goal**: Add visual effects to GPU rendering pipeline  
-**Duration**: 2-3 phases (complex)  
-**Risk**: Medium - shader programming, visual fidelity
+### Phase 4: Optimization (Future - Optional)
+**Goal**: Further improve performance without breaking correctness  
+**Duration**: TBD  
+**Risk**: HIGH - coordinate bugs lurk here
 
-**Tasks**:
-1. **Phase 3a: Basic Visual Parity**
-   - Extend shaders in `shell.py` for rounded rectangles (already done)
-   - Add alpha blending support
-   - Add per-note brightness (velocity-based)
-   - Test against baseline images
+**ONLY attempt Phase 4 after Phases 1-3 are stable and working!**
 
-2. **Phase 3b: Motion Blur Effect**
-   - Implement multi-pass rendering for blur layers
-   - Add temporal offsets to shader
-   - Validate blur quality against PIL version
+Possible optimizations:
+- Batch upload static elements once (strike line, lanes, legend)
+- GPU visibility culling in vertex shader
+- Persistent note buffer with instanced rendering
+- Shader-based motion blur (vs multi-pass rendering)
 
-3. **Phase 3c: Highlight Circles**
-   - Add circle primitive rendering
-   - Implement pulse animation in shader
-   - Add glow effect (layered circles with alpha)
+**CRITICAL RULE**: Any optimization must not reintroduce coordinate system bugs.
 
-**Validation**:
-- [ ] Baseline comparison tests pass (tolerance: ±5 per RGB channel)
-- [ ] Visual inspection confirms no quality loss
-- [ ] Performance >100 FPS on reference hardware
-
-### Phase 4: Build midi_renderer.py Orchestration
-**Goal**: Create complete MIDI rendering pipeline using ModernGL  
-**Duration**: 1 phase  
-**Risk**: Low - assembling tested components
-
-**Tasks**:
-1. Create `midi_renderer.py` with main render function
-2. Integrate MIDI parsing (midi_core)
-3. Integrate frame generation (animation)
-4. Integrate GPU rendering (shell)
-5. Add FFmpeg video encoding with audio sync
-6. Add project manager integration
+**Testing Protocol**:
+1. Run full test suite before and after optimization
+2. Compare output frame-by-frame - must be pixel-identical
+3. If ANY coordinate bugs appear, REVERT immediately
+4. Document performance gains vs risk
 
 **Validation**:
-- [ ] Complete MIDI file renders to video
-- [ ] Audio sync works correctly
-- [ ] Performance targets met (>100 FPS)
-
-### Phase 5: Integration and Regression Testing
-**Goal**: Ensure production readiness and backward compatibility  
-**Duration**: 1 phase  
-**Risk**: Medium - final validation
-
-**Tasks**:
-1. Create `demo_midi.py` demonstrating full pipeline
-2. Run full regression test suite
-3. Compare output videos frame-by-frame with PIL version
-4. Document performance improvements
-5. Update `render_midi_to_video.py` to optionally use new renderer
-
-**Validation**:
-- [ ] All tests pass (`pytest`)
-- [ ] Frame-by-frame comparison within tolerance
-- [ ] Performance benchmarks documented
-- [ ] User documentation updated
-
-### Phase 6: Replace PIL Renderer (Optional/Future)
+- [ ] Output is pixel-identical to pre-optimization version
+- [ ] Performance improvement is measurable (>10% speedup)
+- [ ] No coordinate system bugs
+- [ ] All tests still pass
 **Goal**: Make ModernGL renderer the default  
 **Duration**: 1 phase  
 **Risk**: Low - already validated
 
-**Tasks**:
-1. Add `--renderer` flag to `render_midi_to_video.py` (choices: 'pil', 'moderngl')
-2. Default to 'moderngl' with fallback to 'pil'
-3. Deprecation notice for PIL renderer
-4. Update all relevant documentation
+## Implementation Guidelines
 
-**Deferred**: This phase should only happen after Phase 5 validation in production use.
+### Coordinate System Rules (CRITICAL)
+1. **Work in normalized OpenGL coords everywhere** (-1 to +1)
+2. **Never convert to pixel space and back** - this was the source of all bugs in gpu_resident_*.py
+3. **Y-axis convention: +1.0 = top, -1.0 = bottom** - stick to OpenGL NDC convention
+4. **Framebuffer flip is correct** - keep `np.flipud()` in read_framebuffer()
+5. **When in doubt, check demo_animation.py** - it's the working reference
 
-## Key Design Decisions
+### Testing Strategy
 
-### 1. No Shader Refactoring of render_midi_to_video.py in Early Phases
-The current `render_midi_to_video.py` must remain untouched until Phase 5+. Extract functions into new modules, but leave original file as-is to avoid breaking tests.
+Follow the 3-tier testing approach from `how-to-perform-testing.instructions.md`:
 
-### 2. Functional Core Pattern Throughout
-All new code follows strict functional core/imperative shell:
-- `*_core.py` modules: Pure functions only
-- `*_renderer.py`, `shell.py`: Side effects isolated here
-- No GPU operations in core modules
-- No calculations in shell modules
+**Level 1: Smoke Tests** (~0.3s)
+- Rendering doesn't crash
+- Output has correct dimensions (1920x1080)
+- Basic operations complete without errors
 
-### 3. Progressive Visual Enhancement
-Implement effects in order of complexity:
-1. Basic rectangles with alpha
-2. Rounded corners (already working)
-3. Velocity-based brightness
-4. Motion blur
-5. Highlight circles with pulse
+**Level 2: Property Tests** (~0.5s)
+- Notes appear in correct lane positions
+- Notes move from top to bottom (not backwards)
+- Notes cover full screen height (not just 50%)
+- Colors match MIDI drum mapping
+- Strike line at 85% down
 
-Each step must pass visual regression tests before proceeding.
+**Level 3: Regression Tests** (~2-5s, marked `@pytest.mark.slow @pytest.mark.regression`)
+- Pixel-perfect baseline comparisons
+- Run manually or pre-release only
+- Update baselines when intentional visual changes made
 
-### 4. Parallel Testing Strategy
-- Keep PIL renderer working throughout migration
-- Add comparison tests that render same MIDI with both renderers
-- Use image diff tools to quantify visual differences
-- Define acceptable tolerance (recommendation: ±5 per RGB channel)
+**Coverage Target**: Level 2 tests alone should provide 85-90% coverage of GPU shell code.
 
-## Testing Strategy
+### Before Starting Each Session
+1. Run `python -m moderngl_renderer.demo_animation` and verify it works
+2. Check output at `moderngl_renderer/test_artifacts/animation_demo.mp4`
+3. Review coordinate system rules above
+4. Remember: **Simple is better than clever**
 
-### Unit Tests (Functional Core)
-- Test all MIDI parsing functions with various MIDI files
-- Test effect calculations with boundary conditions
-- Test coordinate transformations
-- Fast execution (<0.1s total)
-
-### Integration Tests (Animation System)
-- Test frame scene generation with real MIDI data
-- Test lane filtering and mapping
-- Test visibility window calculations
-- Medium execution (<1s total)
-
-### Visual Regression Tests (GPU Rendering)
-**Level 1: Smoke Tests** (<0.5s)
-- Scene renders without crashing
-- Output has correct dimensions
-- All frame times produce valid output
-
-**Level 2: Property Tests** (<2s)
-- Notes appear in correct lanes
-- Colors match MIDI velocity
-- Alpha fading works correctly
-- Kick drums span full width
-
-**Level 3: Regression Tests** (5-10s, marked `@pytest.mark.slow`)
-- Pixel-perfect comparison with baselines
-- Run manually before releases
-- Update baselines when intentional changes made
-
-### Performance Tests
-- Measure FPS for standardized MIDI file
-- Compare against PIL baseline
-- Must achieve >100 FPS target
-- Document in results file
+### File Organization
+- Keep all work inside `moderngl_renderer/` directory
+- Follow existing pattern: `core.py`, `shell.py`, `animation.py`
+- No temporary or debug files in project root
+- Test files: `test_*.py` in same directory as code under test
 
 ## Dependencies
 
-### Required
-- `moderngl` - Already installed
-- `numpy` - Already installed
-- `mido` - Already installed (MIDI parsing)
-- `ffmpeg` - Already available (video encoding)
+### Already Available
+- `moderngl` - GPU rendering library
+- `numpy` - Array operations
+- `mido` - MIDI file parsing (used by existing render_midi_to_video.py)
+- `ffmpeg` - Video encoding
 
-### No New Dependencies
-This migration adds zero new dependencies.
+### No New Dependencies Required
+This plan adds zero new dependencies.
 
 ## Success Metrics
 
-### Performance
-- **Target**: >100 FPS for 1920x1080 @ 60fps output
-- **Baseline**: ~40 FPS with PIL renderer
-- **Minimum Acceptable**: 80 FPS (2x improvement)
+### Must Have (Phase 2 Complete)
+- ModernGL renderer produces visually identical output to PIL renderer
+- Audio synchronization is perfect (no drift)
+- No coordinate system bugs (notes at correct positions, correct speed, full screen height)
+- 3x+ performance improvement over PIL
 
-### Quality
-- **Visual Fidelity**: ±5 RGB per channel vs PIL version
-- **Anti-aliasing**: No visible stair-stepping on curves
-- **Alpha Blending**: Smooth transparency transitions
+### Nice to Have (Phase 3 Complete)
+- All visual elements present (legend, progress bar, highlights)
+- 5x+ performance improvement
+- Users prefer ModernGL output quality
 
-### Code Quality
-- **Test Coverage**: >85% on functional core
-- **Tests Passing**: 100% of existing tests
-- **Architecture**: Clean separation of concerns
-- **Documentation**: All public functions documented
+### Stretch Goal (Phase 4 - Optional)
+- 10x+ performance improvement
+- Real-time preview capability (>60 FPS for 1080p)
+- GPU-resident architecture working correctly (without coordinate bugs)
 
-## File Changes Summary
+## Timeline Estimate
+
+- **Phase 1**: 2-4 hours (adapt existing working code for MIDI data)
+- **Phase 2**: 2-3 hours (integration with main pipeline)
+- **Phase 3**: 3-4 hours (add visual elements)
+- **Phase 4**: TBD (optimization is optional, only if needed)
+
+**Total for working renderer: 7-11 hours of focused work**
+
+## Expected File Changes
 
 ### New Files
-- `midi_types.py` (~275 lines) ✓ COMPLETED
-- `test_midi_types.py` (~608 lines) ✓ COMPLETED
-- `moderngl_renderer/midi_core.py` (~200 lines)
-- `moderngl_renderer/midi_effects.py` (~150 lines)
-- `moderngl_renderer/midi_renderer.py` (~300 lines)
-- `moderngl_renderer/demo_midi.py` (~100 lines)
-- `moderngl_renderer/test_midi_core.py` (~150 lines)
-- `moderngl_renderer/test_midi_effects.py` (~100 lines)
-- `moderngl_renderer/test_midi_renderer.py` (~200 lines)
+- `moderngl_renderer/midi_animation.py` (~150 lines) - Bridge MIDI → animation format
+- `moderngl_renderer/midi_renderer.py` (~200 lines) - Main entry point
+- `moderngl_renderer/test_midi_animation.py` (~100 lines) - Tests
 
-### Modified Files
-- `moderngl_renderer/core.py` (+50 lines - coordinate helpers)
-- `moderngl_renderer/shell.py` (+100 lines - effect shaders)
-- `moderngl_renderer/animation.py` (+80 lines - MIDI note support)
-- `render_midi_to_video.py` (Phase 6 only - add renderer option)
+### Modified Files  
+- `moderngl_renderer/shell.py` (+50 lines) - Add strike line, lane markers
+- `moderngl_renderer/animation.py` (+30 lines) - Support DrumNote format
+- `render_midi_to_video.py` (+20 lines) - Add `--use-moderngl` flag
 
-### Unchanged Files
-- All existing tests remain unchanged until Phase 5
-- `demo_animation.py` continues working
-- Project manager integration unchanged
+### Deprecated (Do Not Use)
+- `moderngl_renderer/gpu_resident_core.py` - Broken coordinate system
+- `moderngl_renderer/gpu_resident_shaders.py` - Over-engineered
+- `moderngl_renderer/gpu_resident_shell.py` - Never worked correctly
+
+Add warning comments to gpu_resident_*.py files: "DO NOT USE - coordinate system bugs, use shell.py + animation.py instead"
 
 ## Commit Strategy
 
-Each phase gets a single commit after completion:
+Phase-based commits with descriptive summaries:
 
 ```
-Phase 1: "feat(moderngl): extract MIDI core functions - parsing and effects"
-Phase 2: "feat(moderngl): extend animation system for MIDI notes"
-Phase 3a: "feat(moderngl): implement basic visual effects in GPU"
-Phase 3b: "feat(moderngl): add motion blur shader effect"
-Phase 3c: "feat(moderngl): add highlight circle pulse effect"
-Phase 4: "feat(moderngl): complete MIDI renderer orchestration"
-Phase 5: "feat(moderngl): integrate and validate MIDI renderer"
-Phase 6: "feat(moderngl): make GPU renderer default option"
+Phase 1: refactor(moderngl): adapt animation.py for MIDI DrumNote input - strike line, lane mapping
+Phase 2: feat(moderngl): integrate MIDI renderer with render_midi_to_video.py pipeline  
+Phase 3: feat(moderngl): add legend, progress bar, highlight effects
+Phase 4: perf(moderngl): optimize rendering performance (only if needed)
 ```
 
-Each commit message includes:
-- Tests passing count
-- Performance metrics (FPS)
-- Lines added/changed
+Each commit includes:
+- Metrics: tests passing, FPS achieved, coverage percentage
+- Brief summary of what works now
 
-## Open Questions
+## Next Steps
 
-1. **Q**: Should motion blur be implemented as multi-pass rendering or single-pass shader effect?
-   **A**: [To be determined in Phase 3b based on performance testing]
+1. **Read this plan thoroughly** - understand the architecture decision
+2. **Run the demo**: `python -m moderngl_renderer.demo_animation`
+   - Watch the video output at `moderngl_renderer/test_artifacts/animation_demo.mp4`
+   - Verify demo still works (proves architecture is sound)
+3. **Study the working code**:
+   - Read `moderngl_renderer/animation.py` - understand coordinate math
+   - Read `moderngl_renderer/shell.py` - understand GPU rendering approach
+   - Read `moderngl_renderer/demo_animation.py` - see how they connect
+4. **Start Phase 1**: Create `midi_animation.py` bridge module
+   - Convert DrumNote → animation format
+   - Map MIDI lanes to normalized X positions
+   - Test with project 13 (simple 63-note file)
+5. **Test constantly** - verify each piece works before moving on
 
-2. **Q**: How to handle drum map configuration (currently hardcoded in render_midi_to_video.py)?
-   **A**: [Extract to config.yaml in Phase 1]
+## Key Takeaways from Failed Approach
 
-3. **Q**: Should we support both PIL and ModernGL renderers long-term?
-   **A**: [Defer until Phase 6 based on user feedback]
+1. **The working demo was RIGHT THERE** - demo_animation.py had the correct architecture all along
+2. **Don't over-engineer** - pixel-space abstractions introduced unfixable bugs
+3. **Coordinate conversions are deadly** - stick to one coordinate system (normalized OpenGL)
+4. **Simple beats clever** - shell.py + animation.py is simple and works
+5. **Test the basics first** - smoke tests would have caught the coordinate bugs immediately
+
+## Remember
+
+> "The GPU-resident approach failed because we tried to be clever with coordinate conversions. The demo_animation.py approach succeeds because it's straightforward: normalized coordinates everywhere, no fancy optimizations, just clean functional code. Use what works."
 
 ## References
 

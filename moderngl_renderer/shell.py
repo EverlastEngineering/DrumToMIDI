@@ -144,10 +144,11 @@ out vec4 f_color;
 uniform sampler2D u_scene;     // Original scene
 uniform sampler2D u_glow;      // Blurred glow
 uniform float u_glow_strength;  // Glow intensity multiplier
+uniform vec2 u_glow_offset;     // Glow offset in normalized coords
 
 void main() {
     vec4 scene_color = texture(u_scene, v_texcoord);
-    vec4 glow_color = texture(u_glow, v_texcoord);
+    vec4 glow_color = texture(u_glow, v_texcoord + u_glow_offset);
     
     // Additive blend with strength control
     vec3 final_color = scene_color.rgb + glow_color.rgb * u_glow_strength;
@@ -217,7 +218,8 @@ class ModernGLContext:
         height: int, 
         corner_radius: float = 12.0,
         blur_radius: float = 5.0,
-        glow_strength: float = 0.5
+        glow_strength: float = 0.5,
+        glow_offset_pixels: float = 0.0
     ):
         """Initialize GPU context and resources for multi-pass rendering
         
@@ -238,12 +240,14 @@ class ModernGLContext:
             corner_radius: Rounded corner radius in pixels
             blur_radius: Gaussian blur radius (higher = more blur)
             glow_strength: Glow intensity (0.0 = none, 1.0 = full)
+            glow_offset_pixels: Vertical offset for glow in pixels (positive = up)
         """
         self.width = width
         self.height = height
         self.corner_radius = corner_radius
         self.blur_radius = blur_radius
         self.glow_strength = glow_strength
+        self.glow_offset_pixels = glow_offset_pixels
         
         # Create standalone OpenGL context (no window required)
         self.ctx = moderngl.create_standalone_context()
@@ -312,6 +316,9 @@ class ModernGLContext:
             fragment_shader=COMPOSITE_FRAGMENT_SHADER
         )
         self.composite_prog['u_glow_strength'].value = glow_strength
+        # Convert pixel offset to normalized coords (negative because OpenGL Y is inverted)
+        glow_offset_y = -glow_offset_pixels / height
+        self.composite_prog['u_glow_offset'].value = (0.0, glow_offset_y)
         
         # ====================================================================
         # Fullscreen quad for post-processing passes
@@ -520,6 +527,61 @@ def render_rectangles(
     composite_vao.render(moderngl.TRIANGLE_STRIP)
     
     composite_vao.release()
+
+
+def render_rectangles_no_glow(
+    ctx: ModernGLContext,
+    rectangles: List[Dict[str, Any]]
+) -> None:
+    """Render rectangles directly to output framebuffer without glow effect
+    
+    Renders sharp rectangles on top of current framebuffer contents.
+    Useful for UI elements that should remain crisp (strike line, lane markers).
+    
+    Side effects:
+    - Renders directly to output framebuffer
+    - Uploads data to GPU
+    - Executes draw call
+    
+    Args:
+        ctx: ModernGL context
+        rectangles: List of rectangle specifications
+    """
+    if not rectangles:
+        return
+    
+    # Prepare data using functional core
+    colors, rects, sizes = batch_rectangle_data(
+        rectangles, 
+        ctx.width, 
+        ctx.height
+    )
+    
+    # Upload instanced data
+    color_vbo = ctx.ctx.buffer(colors.tobytes())
+    rect_vbo = ctx.ctx.buffer(rects.tobytes())
+    size_vbo = ctx.ctx.buffer(sizes.tobytes())
+    
+    # Create VAO
+    vao = ctx.ctx.vertex_array(
+        ctx.scene_prog,
+        [
+            (ctx.quad_vbo, '2f', 'in_position'),
+            (color_vbo, '3f/i', 'in_color'),
+            (rect_vbo, '4f/i', 'in_rect'),
+            (size_vbo, '2f/i', 'in_size_pixels'),
+        ]
+    )
+    
+    # Render directly to output framebuffer
+    ctx.fbo.use()
+    vao.render(moderngl.TRIANGLE_STRIP, instances=len(rectangles))
+    
+    # Cleanup
+    vao.release()
+    color_vbo.release()
+    rect_vbo.release()
+    size_vbo.release()
 
 
 def render_circles(

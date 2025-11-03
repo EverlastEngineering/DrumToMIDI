@@ -33,7 +33,7 @@ from moderngl_renderer.midi_animation import (
     get_visible_notes_at_time,
     calculate_note_y_at_time
 )
-from moderngl_renderer.shell import ModernGLContext, render_rectangles, read_framebuffer
+from moderngl_renderer.shell import ModernGLContext, render_rectangles, render_rectangles_no_glow, read_framebuffer
 
 
 def _midi_note_to_rectangle(
@@ -290,7 +290,14 @@ def render_midi_to_video_moderngl(
     last_progress_time = start_time
     
     try:
-        with ModernGLContext(width, height, corner_radius=corner_radius) as ctx:
+        with ModernGLContext(
+        width, 
+        height, 
+        corner_radius=corner_radius,
+        blur_radius=8.0,         # More prominent glow
+        glow_strength=0.8,       # Stronger glow intensity
+        glow_offset_pixels=0.0   # Shift glow up by 3 pixels
+    ) as ctx:
             if verbose:
                 print("✓ GPU ready, rendering...")
                 print()
@@ -302,24 +309,23 @@ def render_midi_to_video_moderngl(
             for frame_num in range(total_frames):
                 current_time = frame_num / fps
                 
-                # Build rectangles for this frame
-                rectangles = []
-                
-                # Background elements (static)
-                rectangles.extend(lane_markers)
-                
-                # Notes (dynamic - visible notes change each frame)
+                # Build notes with glow effect
+                note_rectangles = []
                 visible = get_visible_notes_at_time(anim_notes, current_time)
                 for note in visible:
                     rect = _midi_note_to_rectangle(note, current_time)
-                    rectangles.append(rect)
+                    note_rectangles.append(rect)
                 
-                # Foreground elements
-                rectangles.append(strike_line)
-                
-                # Render frame
+                # Render notes with glow (multi-pass pipeline)
                 ctx.ctx.clear(0.0, 0.0, 0.0)  # Black background
-                render_rectangles(ctx, rectangles)
+                render_rectangles(ctx, note_rectangles)
+                
+                # Add crisp UI elements on top (no glow)
+                ui_rectangles = []
+                ui_rectangles.extend(lane_markers)
+                ui_rectangles.append(strike_line)
+                render_rectangles_no_glow(ctx, ui_rectangles)
+                
                 frame = read_framebuffer(ctx)
                 
                 # Write to FFmpeg

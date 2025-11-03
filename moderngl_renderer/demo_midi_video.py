@@ -30,7 +30,27 @@ def midi_note_to_rectangle(anim_note, current_time, strike_line_y=-0.6):
     (higher Y = top of screen), and it will convert to bottom-left internally.
     """
     y_center = calculate_note_y_at_time(anim_note, current_time, strike_line_y)
-    brightness = 0.3 + (anim_note.velocity / 127.0) * 0.7
+    
+    # Base brightness from velocity
+    base_brightness = 0.3 + (anim_note.velocity / 127.0) * 0.7
+    
+    # Fade out after passing strike line
+    # Calculate fade based on distance past strike line
+    if y_center < strike_line_y:
+        # Note has passed strike line (y_center is below/less than strike_line_y)
+        # In OpenGL: lower Y = further down screen
+        distance_past_strike = strike_line_y - y_center  # positive value
+        
+        # Fade over a distance (e.g., 0.3 normalized units = ~15% of screen)
+        fade_distance = 0.3
+        fade_factor = 1.0 - min(distance_past_strike / fade_distance, 1.0)
+        
+        # Apply fade to brightness
+        brightness = base_brightness * fade_factor
+    else:
+        # Note hasn't reached strike line yet
+        brightness = base_brightness
+    
     color = tuple(c * brightness for c in anim_note.color)
     
     # Calculate top-left corner from center position

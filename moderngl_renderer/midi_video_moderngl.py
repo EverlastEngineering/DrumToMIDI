@@ -159,17 +159,25 @@ def render_midi_to_video_moderngl(
         audio_path = Path(audio_path)
         if audio_path.exists():
             ffmpeg_cmd.extend(['-i', str(audio_path)])
-            ffmpeg_cmd.extend(['-c:a', 'aac', '-b:a', '192k'])
         elif verbose:
             print(f"⚠️  Warning: Audio file not found: {audio_path}")
     
     # Output settings - Use VideoToolbox hardware encoder on macOS
     ffmpeg_cmd.extend([
         '-c:v', 'h264_videotoolbox',
-        '-b:v', '2M',  # 10 Mbps bitrate (high quality)
-        '-pix_fmt', 'yuv420p',
-        str(output_path)
+        '-b:v', '2M',  # 2 Mbps bitrate (high quality)
+        '-pix_fmt', 'yuv420p'
     ])
+    
+    # Add audio encoding settings if audio is present
+    if audio_path and Path(audio_path).exists():
+        ffmpeg_cmd.extend([
+            '-c:a', 'aac',
+            '-b:a', '192k',
+            '-shortest'  # Match video duration
+        ])
+    
+    ffmpeg_cmd.append(str(output_path))
     
     if verbose:
         print("Starting FFmpeg...")

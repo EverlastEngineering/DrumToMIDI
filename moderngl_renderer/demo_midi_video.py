@@ -87,7 +87,7 @@ def add_lane_markers(num_lanes=3):
         x = -1.0 + i * lane_width
         markers.append({
             'x': x - 0.005,
-            'y': -1.0,
+            'y': 1.0,  # Top of screen (will be converted to bottom-left internally)
             'width': 0.01,
             'height': 2.0,
             'color': (0.3, 0.3, 0.3)  # Dark gray
@@ -263,6 +263,9 @@ def main():
     midi_path = "user_files/13 - srdrums/midi/srdrums.mid"
     audio_path = "user_files/13 - srdrums/srdrums.wav"
     output_path = "moderngl_renderer/test_artifacts/project13_moderngl.mp4"
+    # midi_path = "user_files/1 - The Fate Of Ophelia/midi/The Fate Of Ophelia.mid"
+    # audio_path = "user_files/1 - The Fate Of Ophelia/The Fate Of Ophelia.wav"
+    # output_path = "moderngl_renderer/test_artifacts/project13_moderngl2.mp4"
     
     render_midi_to_video(
         midi_path=midi_path,

@@ -166,13 +166,12 @@ def convert_drum_note_to_animation(
     # Note needs to start ABOVE screen so it falls into view
     start_time = drum_note.time - fall_duration
     
-    # Calculate starting Y position
+    # Calculate starting Y position - ALL notes start from same position
+    # This ensures all notes fall at same speed regardless of height
+    # Use the standard note_height for positioning (not the modified kick height)
     # Screen top is at y=1.0 in normalized coords
-    # Rectangles are positioned by center: bottom_edge = center - height/2
-    # For bottom edge to be at screen top (y=1.0): center = 1.0 + height/2
-    # Add tiny margin so it's just above screen
-    # print(" height:", height)
-    y_start = 1.0 + (height/2) + 0.01
+    # For bottom edge to be at screen top (y=1.0): center = 1.0 + note_height/2
+    y_start = 1.0 + (note_height / 2.0) + 0.01
     
     return MidiAnimationNote(
         x=x,

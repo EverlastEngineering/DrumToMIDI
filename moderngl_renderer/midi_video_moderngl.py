@@ -61,14 +61,14 @@ def _calculate_strike_effect(
     # Calculate position within strike window (0.0 at edges, 1.0 at center)
     progress = 1.0 - abs(distance) / strike_window
     
-    # Scale pulse: 1.0 → 1.2 → 1.0 (smooth curve)
-    scale_factor = 1.0 + 0.2 * progress * progress
+    # Scale pulse: 1.0 → 1.3 → 1.0 (stronger height increase)
+    scale_factor = 1.0 + 0.3 * progress * progress
     
-    # Flash: peaks at strike line, fades at edges
-    flash_alpha = 0.8 * progress * progress * progress
+    # Flash: peaks at strike line, fades at edges (more intense)
+    flash_alpha = 1.5 * progress * progress * progress
     
-    # Brightness boost for enhanced glow
-    brightness_boost = 0.5 * progress
+    # Brightness boost for enhanced glow (stronger)
+    brightness_boost = 0.7 * progress
     
     return scale_factor, flash_alpha, brightness_boost
 

@@ -53,7 +53,7 @@ def precompute_all_note_instances(
     note_width_pixels = width / num_lanes if num_lanes > 0 else width
     note_height_pixels = 60  # Fixed height in pixels
     
-    # Normalize to OpenGL coords (-1 to 1)
+        # Normalize to OpenGL coords (-1 to 1)
     def pixel_to_norm_x(x_pixels):
         return (x_pixels / width) * 2.0 - 1.0
     

@@ -178,7 +178,7 @@ class GPUResidentContext:
         Returns:
             numpy array (height, width, 3) of RGB data
         """
-        # Read RGB data from framebuffer
+                # Read RGB data from framebuffer
         data = self.fbo.read(components=3)
         
         # Convert to numpy array and reshape

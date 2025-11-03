@@ -154,8 +154,8 @@ void main() {
     gem_color += vec3(sparkle);                             // Add subtle sparkle flashes (only below strike)
     gem_color += vec3(shimmer);                             // Add very subtle shimmer waves (only below strike)
     
-    // Replace color with white outline in outline region
-    vec3 outline_color = vec3(1.0, 1.0, 1.0);  // White outline
+    // Replace color with gray outline in outline region
+    vec3 outline_color = vec3(0.6, 0.6, 0.6);  // Gray outline (less bright)
     gem_color = mix(gem_color, outline_color, is_outline);
     
     f_color = vec4(gem_color, alpha);

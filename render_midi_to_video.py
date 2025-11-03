@@ -1005,21 +1005,102 @@ def render_project_video(
         audio_source = 'original' if include_audio else None
         print("Note: include_audio parameter is deprecated, use audio_source instead")
     
+    # Get project directory (needed for both renderers)
+    project_dir = project["path"]
+    
     # Use ModernGL GPU renderer if requested
     if use_moderngl:
-        from moderngl_renderer.project_integration import render_project_video_moderngl
-        render_project_video_moderngl(
-            project=project,
+        from moderngl_renderer.midi_video_moderngl import render_midi_to_video_moderngl
+        
+        # Find MIDI files in project/midi/ directory
+        midi_dir = project_dir / "midi"
+        if not midi_dir.exists():
+            print(f"ERROR: No midi/ directory found in project.")
+            print("Run stems_to_midi.py first!")
+            sys.exit(1)
+        
+        midi_files = list(midi_dir.glob("*.mid"))
+        if not midi_files:
+            print(f"ERROR: No MIDI files found in {midi_dir}")
+            print("Run stems_to_midi.py first!")
+            sys.exit(1)
+        
+        # Use first MIDI file
+        midi_file = midi_files[0]
+        if len(midi_files) > 1:
+            print(f"Found {len(midi_files)} MIDI files, using: {midi_file.name}")
+        else:
+            print(f"Using MIDI file: {midi_file.name}")
+        
+        # Output to project/video/ directory
+        video_dir = project_dir / "video"
+        video_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Resolve audio file path based on audio_source
+        audio_file = None
+        video_basename = midi_file.stem  # Default to MIDI name if no audio
+        
+        if audio_source:
+            if audio_source == 'original':
+                # Look for original audio file in project root
+                audio_extensions = ['.wav', '.mp3', '.flac', '.aiff', '.aif']
+                for ext in audio_extensions:
+                    potential_audio = project_dir / f"{project['name']}{ext}"
+                    if potential_audio.exists():
+                        audio_file = str(potential_audio)
+                        video_basename = Path(audio_file).stem
+                        break
+                
+                if not audio_file:
+                    print("WARNING: Original audio requested but not found in project root")
+                    print(f"Looked for: {project['name']}{{.wav,.mp3,.flac,.aiff,.aif}}")
+            
+            elif audio_source.startswith('alternate_mix/'):
+                # Use alternate audio file
+                alternate_audio_path = project_dir / audio_source
+                if alternate_audio_path.exists():
+                    audio_file = str(alternate_audio_path)
+                    video_basename = Path(audio_file).stem
+                else:
+                    print(f"WARNING: Alternate audio '{audio_source}' not found")
+            else:
+                print(f"WARNING: Unknown audio_source value: {audio_source}")
+        
+        # Generate output filename
+        output_file = video_dir / f"{video_basename}.mp4"
+        
+        print(f"\n{'='*60}")
+        print(f"Rendering Video - Project {project['number']}: {project['name']}")
+        print(f"{'='*60}\n")
+        print(f"Using ModernGL GPU renderer (fast mode)")
+        
+        # Render with ModernGL
+        render_midi_to_video_moderngl(
+            midi_path=str(midi_file),
+            output_path=str(output_file),
+            audio_path=audio_file,
             width=width,
             height=height,
             fps=fps,
-            audio_source=audio_source,
-            fall_speed_multiplier=fall_speed_multiplier
+            verbose=True
         )
+        
+        # Update project metadata
+        update_project_metadata(project_dir, {
+            "status": {
+                "separated": project["metadata"]["status"].get("separated", False) if project["metadata"] else False,
+                "cleaned": project["metadata"]["status"].get("cleaned", False) if project["metadata"] else False,
+                "midi_generated": project["metadata"]["status"].get("midi_generated", False) if project["metadata"] else False,
+                "video_rendered": True
+            }
+        })
+        
+        print(f"Status Update: Video rendering complete")
+        print(f"  Video saved to: {output_file}")
+        print(f"  Project status updated\n")
         return
     
     # Otherwise use legacy PIL/OpenCV renderer
-    project_dir = project["path"]
     
     print(f"\n{'='*60}")
     print(f"Rendering Video - Project {project['number']}: {project['name']}")

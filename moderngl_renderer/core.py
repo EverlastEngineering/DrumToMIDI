@@ -115,7 +115,7 @@ def batch_rectangle_data(
     rectangles: List[Dict[str, Any]], 
     screen_width: int, 
     screen_height: int
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Batch multiple rectangles into numpy arrays for GPU upload
     
     Args:
@@ -123,10 +123,11 @@ def batch_rectangle_data(
         screen_width, screen_height: Screen dimensions in pixels
     
     Returns:
-        (colors, rects, sizes) - numpy arrays ready for GPU buffers
+        (colors, rects, sizes, flags) - numpy arrays ready for GPU buffers
         - colors: (N, 3) float32 array
         - rects: (N, 4) float32 array 
         - sizes: (N, 2) float32 array
+        - flags: (N,) float32 array (1.0 = no_outline, 0.0 = normal)
     """
     prepared = [
         prepare_rectangle_instance_data(rect, screen_width, screen_height)
@@ -136,8 +137,9 @@ def batch_rectangle_data(
     colors = np.array([p['color'] for p in prepared], dtype='f4')
     rects = np.array([p['rect'] for p in prepared], dtype='f4')
     sizes = np.array([p['size_pixels'] for p in prepared], dtype='f4')
+    flags = np.array([1.0 if rect.get('no_outline', False) else 0.0 for rect in rectangles], dtype='f4')
     
-    return colors, rects, sizes
+    return colors, rects, sizes, flags
 
 
 # ============================================================================

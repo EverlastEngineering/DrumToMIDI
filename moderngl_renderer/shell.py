@@ -30,12 +30,14 @@ in vec2 in_position;      // Vertex position (0-1 quad)
 in vec3 in_color;         // Per-instance color
 in vec4 in_rect;          // Per-instance: x, y, width, height (normalized coords)
 in vec2 in_size_pixels;   // Per-instance: width, height in pixels
+in float in_no_outline;   // Per-instance: 1.0 = skip outline, 0.0 = normal
 
 out vec3 v_color;
 out vec2 v_texcoord;
 out vec2 v_size;
 out vec2 v_world_pos;     // World position (normalized coords)
 out vec4 v_rect;          // Rectangle bounds for positional effects
+out float v_no_outline;   // Pass through no_outline flag
 
 void main() {
     // Transform unit quad (0-1) to rectangle position and size
@@ -47,6 +49,7 @@ void main() {
     v_size = in_size_pixels;
     v_world_pos = pos;         // Actual world position of this pixel
     v_rect = in_rect;          // Pass through rectangle bounds
+    v_no_outline = in_no_outline;
 }
 """
 
@@ -58,6 +61,7 @@ in vec2 v_texcoord;  // 0-1 texture coordinates within the rectangle
 in vec2 v_size;      // Width and height of rectangle in pixels
 in vec2 v_world_pos; // World position (normalized coords -1 to 1)
 in vec4 v_rect;      // Rectangle bounds (x, y, width, height)
+in float v_no_outline; // 1.0 = skip outline, 0.0 = normal
 
 out vec4 f_color;
 
@@ -66,7 +70,7 @@ uniform float u_time;            // Animation time in seconds
 
 void main() {
     // =====================================================================
-    // ROUNDED CORNER ALPHA
+    // ROUNDED CORNER ALPHA AND OUTLINE DETECTION
     // =====================================================================
     vec2 pixel_pos = v_texcoord * v_size;
     vec2 half_size = v_size * 0.5;
@@ -74,10 +78,20 @@ void main() {
     vec2 corner_start = half_size - vec2(u_corner_radius);
     
     float alpha = 1.0;
+    float dist_from_edge = 0.0;  // Distance from edge (for outline)
+    
     if (dist_from_center.x > corner_start.x && dist_from_center.y > corner_start.y) {
+        // In corner region - use circular distance
         vec2 corner_dist = dist_from_center - corner_start;
         float dist = length(corner_dist);
         alpha = 1.0 - smoothstep(u_corner_radius - 1.0, u_corner_radius, dist);
+        dist_from_edge = u_corner_radius - dist;
+    } else {
+        // In straight edge region - use rectangular distance
+        dist_from_edge = min(
+            min(pixel_pos.x, v_size.x - pixel_pos.x),
+            min(pixel_pos.y, v_size.y - pixel_pos.y)
+        );
     }
     
     // =====================================================================
@@ -106,7 +120,14 @@ void main() {
     float edge_dist = min(edge_x, edge_y);
     float edge_bright = smoothstep(0.0, 0.15, edge_dist) * 0.2;
     
-    // 4. SUBTLE SPARKLE EFFECT - animated procedural sparkles (toned down)
+    // 4. Hard 2px outline (respects rounded corners) - skip if no_outline flag set
+    bool skip_outline = v_no_outline > 0.5;
+    float outline_width = 2.0;  // Width in pixels
+    
+    // Outline is active if we're within 2px of the edge
+    float is_outline = (dist_from_edge < outline_width && !skip_outline) ? 1.0 : 0.0;
+    
+    // 5. SUBTLE SPARKLE EFFECT - animated procedural sparkles (toned down)
     // Only activate sparkles BELOW strike line (y < -0.6)
     float strike_line_y = -0.6;
     float below_strike = step(v_world_pos.y, strike_line_y);  // 1.0 if below, 0.0 if above
@@ -126,12 +147,16 @@ void main() {
     float shimmer = sin(v_world_pos.x * 6.0 - v_world_pos.y * 6.0 + u_time * 2.0) * 0.5 + 0.5;
     shimmer = pow(shimmer, 10.0) * 0.12 * below_strike;  // Very subtle peaks, only below strike line
     
-    // 5. Combine effects with world lighting and subtle sparkles
+    // 6. Combine effects with world lighting and subtle sparkles
     vec3 gem_color = v_color * gradient * light_intensity;  // Apply gradient + lighting
     gem_color += vec3(highlight);                           // Add specular highlight
     gem_color += v_color * edge_bright;                     // Subtle edge glow
     gem_color += vec3(sparkle);                             // Add subtle sparkle flashes (only below strike)
     gem_color += vec3(shimmer);                             // Add very subtle shimmer waves (only below strike)
+    
+    // Replace color with white outline in outline region
+    vec3 outline_color = vec3(1.0, 1.0, 1.0);  // White outline
+    gem_color = mix(gem_color, outline_color, is_outline);
     
     f_color = vec4(gem_color, alpha);
 }
@@ -491,7 +516,7 @@ def render_rectangles(
     ctx.scene_prog['u_time'].value = time
     
     # Use functional core to prepare data (pure function)
-    colors, rects, sizes = batch_rectangle_data(
+    colors, rects, sizes, flags = batch_rectangle_data(
         rectangles, 
         ctx.width, 
         ctx.height
@@ -501,6 +526,7 @@ def render_rectangles(
     color_vbo = ctx.ctx.buffer(colors.tobytes())
     rect_vbo = ctx.ctx.buffer(rects.tobytes())
     size_vbo = ctx.ctx.buffer(sizes.tobytes())
+    flags_vbo = ctx.ctx.buffer(flags.tobytes())
     
     # Create VAO for instanced rendering
     scene_vao = ctx.ctx.vertex_array(
@@ -510,6 +536,7 @@ def render_rectangles(
             (color_vbo, '3f/i', 'in_color'),          # Per-instance
             (rect_vbo, '4f/i', 'in_rect'),            # Per-instance
             (size_vbo, '2f/i', 'in_size_pixels'),     # Per-instance
+            (flags_vbo, '1f/i', 'in_no_outline'),     # Per-instance
         ]
     )
     
@@ -523,6 +550,7 @@ def render_rectangles(
     color_vbo.release()
     rect_vbo.release()
     size_vbo.release()
+    flags_vbo.release()
     
     # ========================================================================
     # PASS 2: Horizontal blur
@@ -591,7 +619,8 @@ def render_rectangles(
 
 def render_rectangles_no_glow(
     ctx: ModernGLContext,
-    rectangles: List[Dict[str, Any]]
+    rectangles: List[Dict[str, Any]],
+    time: float = 0.0
 ) -> None:
     """Render rectangles directly to output framebuffer without glow effect
     
@@ -606,12 +635,16 @@ def render_rectangles_no_glow(
     Args:
         ctx: ModernGL context
         rectangles: List of rectangle specifications
+        time: Current animation time in seconds (for sparkle effects)
     """
     if not rectangles:
         return
     
+    # Update time uniform
+    ctx.scene_prog['u_time'].value = time
+    
     # Prepare data using functional core
-    colors, rects, sizes = batch_rectangle_data(
+    colors, rects, sizes, flags = batch_rectangle_data(
         rectangles, 
         ctx.width, 
         ctx.height
@@ -621,6 +654,7 @@ def render_rectangles_no_glow(
     color_vbo = ctx.ctx.buffer(colors.tobytes())
     rect_vbo = ctx.ctx.buffer(rects.tobytes())
     size_vbo = ctx.ctx.buffer(sizes.tobytes())
+    flags_vbo = ctx.ctx.buffer(flags.tobytes())
     
     # Create VAO
     vao = ctx.ctx.vertex_array(
@@ -630,6 +664,7 @@ def render_rectangles_no_glow(
             (color_vbo, '3f/i', 'in_color'),
             (rect_vbo, '4f/i', 'in_rect'),
             (size_vbo, '2f/i', 'in_size_pixels'),
+            (flags_vbo, '1f/i', 'in_no_outline'),
         ]
     )
     
@@ -642,6 +677,7 @@ def render_rectangles_no_glow(
     color_vbo.release()
     rect_vbo.release()
     size_vbo.release()
+    flags_vbo.release()
 
 
 def render_circles(

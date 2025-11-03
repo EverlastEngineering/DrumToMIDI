@@ -143,7 +143,8 @@ def _midi_note_to_rectangle(
         'y': y_top,
         'width': scaled_width,
         'height': scaled_height,
-        'color': color
+        'color': color,
+        'no_outline': anim_note.is_kick  # Skip outline for kick drum
     }
 
 
@@ -165,7 +166,8 @@ def _add_strike_line_rectangle(
         'y': strike_line_y - thickness / 2.0,
         'width': 2.0,
         'height': thickness,
-        'color': (1.0, 1.0, 1.0)  # White
+        'color': (1.0, 1.0, 1.0),  # White
+        'no_outline': True  # Skip outline for UI elements
     }
 
 
@@ -188,7 +190,8 @@ def _add_lane_markers(num_lanes: int = 3) -> List[Dict[str, Any]]:
             'y': 1.0,  # Top of screen
             'width': 0.01,
             'height': 2.0,
-            'color': (0.3, 0.3, 0.3)  # Dark gray
+            'color': (0.3, 0.3, 0.3),  # Dark gray
+            'no_outline': True  # Skip outline for UI elements
         })
     
     return markers
@@ -373,15 +376,13 @@ def render_midi_to_video_moderngl(
                     rect = _midi_note_to_rectangle(note, current_time)
                     note_rectangles.append(rect)
                 
-                # Render notes with glow (multi-pass pipeline)
+                # Render all rectangles without glow (direct rendering)
                 ctx.ctx.clear(0.0, 0.0, 0.0)  # Black background
-                render_rectangles(ctx, note_rectangles, time=current_time)
-                
-                # Add crisp UI elements on top (no glow)
-                ui_rectangles = []
-                ui_rectangles.extend(lane_markers)
-                ui_rectangles.append(strike_line)
-                render_rectangles_no_glow(ctx, ui_rectangles)
+                all_rectangles = []
+                all_rectangles.extend(note_rectangles)
+                all_rectangles.extend(lane_markers)
+                all_rectangles.append(strike_line)
+                render_rectangles_no_glow(ctx, all_rectangles, time=current_time)
                 
                 frame = read_framebuffer(ctx)
                 

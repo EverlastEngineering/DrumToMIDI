@@ -24,14 +24,23 @@ from moderngl_renderer.shell import ModernGLContext, render_rectangles, read_fra
 
 
 def midi_note_to_rectangle(anim_note, current_time, strike_line_y=-0.6):
-    """Convert MidiAnimationNote to rectangle format for shell.py"""
-    y = calculate_note_y_at_time(anim_note, current_time, strike_line_y)
+    """Convert MidiAnimationNote to rectangle format for shell.py
+    
+    Note: shell.py expects 'y' to be the TOP-LEFT corner in OpenGL coords
+    (higher Y = top of screen), and it will convert to bottom-left internally.
+    """
+    y_center = calculate_note_y_at_time(anim_note, current_time, strike_line_y)
     brightness = 0.3 + (anim_note.velocity / 127.0) * 0.7
     color = tuple(c * brightness for c in anim_note.color)
     
+    # Calculate top-left corner from center position
+    # In OpenGL: higher Y = top, so top = center + height/2
+    y_top = y_center + anim_note.height / 2.0
+    x_left = anim_note.x - anim_note.width / 2.0
+    
     return {
-        'x': anim_note.x - anim_note.width / 2.0,
-        'y': y - anim_note.height / 2.0,
+        'x': x_left,
+        'y': y_top,
         'width': anim_note.width,
         'height': anim_note.height,
         'color': color

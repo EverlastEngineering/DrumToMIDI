@@ -163,11 +163,16 @@ def convert_drum_note_to_animation(
     color = tuple(c / 255.0 for c in drum_note.color)
     
     # Calculate when note should start appearing
-    # It starts at top of screen and takes fall_duration to reach strike line
+    # Note needs to start ABOVE screen so it falls into view
     start_time = drum_note.time - fall_duration
     
-    # Y position starts at top of screen
-    y_start = 1.0
+    # Calculate starting Y position
+    # Screen top is at y=1.0 in normalized coords
+    # Rectangles are positioned by center: bottom_edge = center - height/2
+    # For bottom edge to be at screen top (y=1.0): center = 1.0 + height/2
+    # Add tiny margin so it's just above screen
+    # print(" height:", height)
+    y_start = 1.0 + (height/2) + 0.01
     
     return MidiAnimationNote(
         x=x,
@@ -258,24 +263,34 @@ def convert_drum_notes_to_animation(
 def get_visible_notes_at_time(
     animation_notes: List[MidiAnimationNote],
     current_time: float,
-    lookahead: float = 0.5,
-    lookbehind: float = 0.5
+    strike_line_y: float = -0.6,
+    screen_bottom: float = -1.0
 ) -> List[MidiAnimationNote]:
     """Get notes visible at a specific time
     
     Args:
         animation_notes: All notes
         current_time: Current playback time (seconds)
-        lookahead: Show notes this many seconds before hit time
-        lookbehind: Keep notes visible this many seconds after hit time
+        strike_line_y: Strike line Y position
+        screen_bottom: Bottom of screen Y position
     
     Returns:
-        List of notes that should be visible
+        List of notes that should be visible (on screen)
     """
     visible = []
     for note in animation_notes:
-        # Note is visible from start_time until hit_time + lookbehind
-        if note.start_time <= current_time <= note.hit_time + lookbehind:
+        # Calculate current Y position
+        y = calculate_note_y_at_time(note, current_time, strike_line_y)
+        
+        # Note is visible if any part overlaps with screen
+        # In OpenGL coords: screen_top = 1.0, screen_bottom = -1.0
+        # Note spans from (y - height/2) to (y + height/2)
+        # Visible if: bottom_edge < screen_top AND top_edge > screen_bottom
+        top_edge = y + note.height / 2.0
+        bottom_edge = y - note.height / 2.0
+        
+        # Show note if it overlaps with screen bounds
+        if bottom_edge < 1.0 and top_edge > screen_bottom:
             visible.append(note)
     
     return visible
@@ -294,26 +309,24 @@ def calculate_note_y_at_time(
         strike_line_y: Strike line position in normalized coords
     
     Returns:
-        Y position in normalized coords (+1.0 = top, strike_line_y = strike line)
+        Y position in normalized coords (+1.0 = top, -1.0 = bottom)
     """
     if current_time <= note.start_time:
-        # Not started yet, position at top
+        # Not started yet, position above screen
         return note.y_start
     
-    if current_time >= note.hit_time:
-        # At or past hit time, position at strike line
-        return strike_line_y
-    
-    # Interpolate between start and strike line
+    # Calculate how far through the animation we are
     time_elapsed = current_time - note.start_time
     time_total = note.hit_time - note.start_time
     
     if time_total == 0:
         return strike_line_y
     
-    progress = time_elapsed / time_total
+    # Calculate fall speed (units per second)
+    distance = note.y_start - strike_line_y  # e.g., 1.05 - (-0.6) = 1.65
+    fall_speed = distance / time_total
     
-    # Linear interpolation from y_start (+1.0) to strike_line_y (-0.6)
-    y = note.y_start + (strike_line_y - note.y_start) * progress
+    # Note continues falling at constant speed after hit time
+    y = note.y_start - (fall_speed * time_elapsed)
     
     return y

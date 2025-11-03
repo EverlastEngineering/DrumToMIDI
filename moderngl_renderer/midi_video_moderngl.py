@@ -146,6 +146,7 @@ def render_midi_to_video_moderngl(
     fps: int = 60,
     corner_radius: float = 8.0,
     tail_duration: float = 3.0,
+    fall_speed_multiplier: float = 1.0,
     verbose: bool = True
 ) -> None:
     """Render MIDI file to video using ModernGL GPU acceleration
@@ -159,6 +160,7 @@ def render_midi_to_video_moderngl(
         fps: Frames per second
         corner_radius: Rounded corner radius for notes (pixels)
         tail_duration: Extra time after last note (seconds)
+        fall_speed_multiplier: Speed multiplier for falling notes (1.0 = default, 0.5 = half speed, 2.0 = double speed)
         verbose: Print progress information
         
     Raises:
@@ -205,7 +207,17 @@ def render_midi_to_video_moderngl(
     if verbose:
         print("Converting to animation format...")
     
-    anim_notes = convert_drum_notes_to_animation(drum_notes)
+    # Calculate pixels per second with fall speed multiplier
+    # Default is 600 pixels/second (height * 0.4 for 1080p at 1.0x speed)
+    base_pixels_per_second = height * 0.4
+    pixels_per_second = base_pixels_per_second * fall_speed_multiplier
+    
+    anim_notes = convert_drum_notes_to_animation(
+        drum_notes,
+        screen_width=width,
+        screen_height=height,
+        pixels_per_second=pixels_per_second
+    )
     
     if verbose:
         print(f"✓ {len(anim_notes)} animation notes")

@@ -1082,6 +1082,7 @@ def render_project_video(
             width=width,
             height=height,
             fps=fps,
+            fall_speed_multiplier=fall_speed_multiplier,
             verbose=True
         )
         

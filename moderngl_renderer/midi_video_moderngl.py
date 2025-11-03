@@ -36,6 +36,43 @@ from moderngl_renderer.midi_animation import (
 from moderngl_renderer.shell import ModernGLContext, render_rectangles, render_rectangles_no_glow, read_framebuffer
 
 
+def _calculate_strike_effect(
+    y_center: float,
+    strike_line_y: float = -0.6,
+    strike_window: float = 0.04
+) -> tuple:
+    """Calculate strike effect parameters
+    
+    Args:
+        y_center: Note center Y position in normalized coords
+        strike_line_y: Strike line Y position
+        strike_window: Time window around strike line (in normalized units)
+    
+    Returns:
+        (scale_factor, flash_alpha, brightness_boost)
+    """
+    # Distance from strike line (negative = below, positive = above)
+    distance = y_center - strike_line_y
+    
+    # Check if within strike window
+    if abs(distance) > strike_window:
+        return 1.0, 0.0, 0.0
+    
+    # Calculate position within strike window (0.0 at edges, 1.0 at center)
+    progress = 1.0 - abs(distance) / strike_window
+    
+    # Scale pulse: 1.0 → 1.2 → 1.0 (smooth curve)
+    scale_factor = 1.0 + 0.2 * progress * progress
+    
+    # Flash: peaks at strike line, fades at edges
+    flash_alpha = 0.8 * progress * progress * progress
+    
+    # Brightness boost for enhanced glow
+    brightness_boost = 0.5 * progress
+    
+    return scale_factor, flash_alpha, brightness_boost
+
+
 def _midi_note_to_rectangle(
     anim_note: Any,
     current_time: float,
@@ -57,6 +94,11 @@ def _midi_note_to_rectangle(
     """
     y_center = calculate_note_y_at_time(anim_note, current_time, strike_line_y)
     
+    # Calculate strike effect
+    scale_factor, flash_alpha, brightness_boost = _calculate_strike_effect(
+        y_center, strike_line_y
+    )
+    
     # Base brightness from velocity
     base_brightness = 0.3 + (anim_note.velocity / 127.0) * 0.7
     
@@ -74,18 +116,33 @@ def _midi_note_to_rectangle(
     else:
         brightness = base_brightness
     
-    color = tuple(c * brightness for c in anim_note.color)
+    # Apply strike brightness boost
+    brightness = min(1.0, brightness + brightness_boost)
     
-    # Calculate top-left corner from center position
+    # Apply flash effect (mix towards white)
+    base_color = tuple(c * brightness for c in anim_note.color)
+    if flash_alpha > 0:
+        color = tuple(
+            c * (1.0 - flash_alpha) + flash_alpha
+            for c in base_color
+        )
+    else:
+        color = base_color
+    
+    # Apply scale factor to height only (not width)
+    scaled_width = anim_note.width
+    scaled_height = anim_note.height * scale_factor
+    
+    # Calculate top-left corner from center position (accounting for scale)
     # In OpenGL: higher Y = top, so top = center + height/2
-    y_top = y_center + anim_note.height / 2.0
-    x_left = anim_note.x - anim_note.width / 2.0
+    y_top = y_center + scaled_height / 2.0
+    x_left = anim_note.x - scaled_width / 2.0
     
     return {
         'x': x_left,
         'y': y_top,
-        'width': anim_note.width,
-        'height': anim_note.height,
+        'width': scaled_width,
+        'height': scaled_height,
         'color': color
     }
 
@@ -318,7 +375,7 @@ def render_midi_to_video_moderngl(
                 
                 # Render notes with glow (multi-pass pipeline)
                 ctx.ctx.clear(0.0, 0.0, 0.0)  # Black background
-                render_rectangles(ctx, note_rectangles)
+                render_rectangles(ctx, note_rectangles, time=current_time)
                 
                 # Add crisp UI elements on top (no glow)
                 ui_rectangles = []

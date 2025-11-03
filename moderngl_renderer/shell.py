@@ -34,6 +34,8 @@ in vec2 in_size_pixels;   // Per-instance: width, height in pixels
 out vec3 v_color;
 out vec2 v_texcoord;
 out vec2 v_size;
+out vec2 v_world_pos;     // World position (normalized coords)
+out vec4 v_rect;          // Rectangle bounds for positional effects
 
 void main() {
     // Transform unit quad (0-1) to rectangle position and size
@@ -43,6 +45,8 @@ void main() {
     v_color = in_color;
     v_texcoord = in_position;  // 0-1 coordinates for fragment shader
     v_size = in_size_pixels;
+    v_world_pos = pos;         // Actual world position of this pixel
+    v_rect = in_rect;          // Pass through rectangle bounds
 }
 """
 
@@ -52,34 +56,84 @@ FRAGMENT_SHADER = """
 in vec3 v_color;
 in vec2 v_texcoord;  // 0-1 texture coordinates within the rectangle
 in vec2 v_size;      // Width and height of rectangle in pixels
+in vec2 v_world_pos; // World position (normalized coords -1 to 1)
+in vec4 v_rect;      // Rectangle bounds (x, y, width, height)
 
 out vec4 f_color;
 
 uniform float u_corner_radius;  // Corner radius in pixels
+uniform float u_time;            // Animation time in seconds
 
 void main() {
-    // Calculate distance from edges
+    // =====================================================================
+    // ROUNDED CORNER ALPHA
+    // =====================================================================
     vec2 pixel_pos = v_texcoord * v_size;
     vec2 half_size = v_size * 0.5;
-    
-    // Distance from center to this pixel
     vec2 dist_from_center = abs(pixel_pos - half_size);
-    
-    // Corner boundaries (where rounding starts)
     vec2 corner_start = half_size - vec2(u_corner_radius);
     
-    // If we're in the corner region, calculate distance from corner circle
     float alpha = 1.0;
     if (dist_from_center.x > corner_start.x && dist_from_center.y > corner_start.y) {
-        // Distance from corner circle center
         vec2 corner_dist = dist_from_center - corner_start;
         float dist = length(corner_dist);
-        
-        // Smooth anti-aliased edge (1 pixel transition)
         alpha = 1.0 - smoothstep(u_corner_radius - 1.0, u_corner_radius, dist);
     }
     
-    f_color = vec4(v_color, alpha);
+    // =====================================================================
+    // ANIMATED GEM EFFECT WITH SPARKLES
+    // =====================================================================
+    
+    // World light source at center of screen (0, 0)
+    vec2 light_pos = vec2(0.0, 0.0);
+    float dist_to_light = length(v_world_pos - light_pos);
+    
+    // Light falloff (pronounced for testing - stronger effect)
+    float light_intensity = 1.0 / (1.0 + dist_to_light * 1.5);
+    light_intensity = clamp(light_intensity, 0.2, 2.0);  // Wider range for dramatic effect
+    
+    // 1. Vertical gradient (darker at bottom, brighter at top)
+    float gradient = mix(0.7, 1.0, v_texcoord.y);
+    
+    // 2. Specular highlight (bright spot near top-center)
+    vec2 highlight_center = vec2(0.5, 0.75);  // Centered horizontally, 75% up
+    float highlight_dist = length(v_texcoord - highlight_center);
+    float highlight = exp(-highlight_dist * 8.0) * 0.4;  // Soft falloff
+    
+    // 3. Edge brightening (subtle rim light)
+    float edge_x = min(v_texcoord.x, 1.0 - v_texcoord.x);
+    float edge_y = min(v_texcoord.y, 1.0 - v_texcoord.y);
+    float edge_dist = min(edge_x, edge_y);
+    float edge_bright = smoothstep(0.0, 0.15, edge_dist) * 0.2;
+    
+    // 4. SUBTLE SPARKLE EFFECT - animated procedural sparkles (toned down)
+    // Only activate sparkles BELOW strike line (y < -0.6)
+    float strike_line_y = -0.6;
+    float below_strike = step(v_world_pos.y, strike_line_y);  // 1.0 if below, 0.0 if above
+    
+    // Create pseudo-random sparkle positions based on world position
+    vec2 sparkle_coord = v_world_pos * 15.0;  // Less dense sparkles
+    float sparkle_pattern = fract(sin(dot(sparkle_coord, vec2(12.9898, 78.233))) * 43758.5453);
+    
+    // Animate sparkles by offsetting the pattern with time (slower)
+    float sparkle_time = fract(sparkle_pattern + u_time * 0.3);
+    
+    // Sharp pulse for sparkle (0 most of the time, 1 briefly)
+    float sparkle = smoothstep(0.985, 0.995, sparkle_time) * smoothstep(1.0, 0.995, sparkle_time);
+    sparkle *= 0.6 * below_strike;  // Much dimmer sparkles, only below strike line
+    
+    // Add moving shimmer waves (diagonal sweep) - very subtle
+    float shimmer = sin(v_world_pos.x * 6.0 - v_world_pos.y * 6.0 + u_time * 2.0) * 0.5 + 0.5;
+    shimmer = pow(shimmer, 10.0) * 0.12 * below_strike;  // Very subtle peaks, only below strike line
+    
+    // 5. Combine effects with world lighting and subtle sparkles
+    vec3 gem_color = v_color * gradient * light_intensity;  // Apply gradient + lighting
+    gem_color += vec3(highlight);                           // Add specular highlight
+    gem_color += v_color * edge_bright;                     // Subtle edge glow
+    gem_color += vec3(sparkle);                             // Add subtle sparkle flashes (only below strike)
+    gem_color += vec3(shimmer);                             // Add very subtle shimmer waves (only below strike)
+    
+    f_color = vec4(gem_color, alpha);
 }
 """
 
@@ -272,6 +326,7 @@ class ModernGLContext:
             fragment_shader=FRAGMENT_SHADER
         )
         self.scene_prog['u_corner_radius'].value = corner_radius
+        self.scene_prog['u_time'].value = 0.0  # Will be updated each frame
         
         # Create unit quad vertices for instanced rendering
         quad_vertices = np.array([
@@ -395,7 +450,8 @@ class ModernGLContext:
 def render_rectangles(
     ctx: ModernGLContext,
     rectangles: List[Dict[str, Any]],
-    clear_color: tuple = (0.0, 0.0, 0.0)
+    clear_color: tuple = (0.0, 0.0, 0.0),
+    time: float = 0.0
 ) -> None:
     """Render rectangles using multi-pass pipeline with glow
     
@@ -415,6 +471,7 @@ def render_rectangles(
         ctx: ModernGL context
         rectangles: List of rectangle specifications
         clear_color: Background color RGB (0.0 to 1.0)
+        time: Current animation time in seconds (for sparkle effects)
     """
     clear_rgba = (*clear_color, 1.0)
     
@@ -429,6 +486,9 @@ def render_rectangles(
     # ========================================================================
     # PASS 1: Render scene to texture
     # ========================================================================
+    
+    # Update time uniform for sparkle animation
+    ctx.scene_prog['u_time'].value = time
     
     # Use functional core to prepare data (pure function)
     colors, rects, sizes = batch_rectangle_data(

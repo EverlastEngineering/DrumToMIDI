@@ -342,6 +342,38 @@ void main() {
 }
 """
 
+# Texture blit shaders (for rendering static overlays like text)
+TEXTURE_BLIT_VERTEX_SHADER = """
+#version 330
+
+in vec2 in_position;  // Fullscreen quad vertices
+
+out vec2 v_texcoord;
+
+void main() {
+    gl_Position = vec4(in_position, 0.0, 1.0);
+    // Convert from clip space (-1 to 1) to texture space (0 to 1)
+    v_texcoord = (in_position + 1.0) * 0.5;
+    // Flip Y axis for texture coordinates
+    v_texcoord.y = 1.0 - v_texcoord.y;
+}
+"""
+
+TEXTURE_BLIT_FRAGMENT_SHADER = """
+#version 330
+
+uniform sampler2D u_texture;
+uniform float u_alpha;
+
+in vec2 v_texcoord;
+out vec4 f_color;
+
+void main() {
+    vec4 texColor = texture(u_texture, v_texcoord);
+    f_color = vec4(texColor.rgb, texColor.a * u_alpha);
+}
+"""
+
 # ============================================================================
 # GPU Context and Resource Management
 # ============================================================================
@@ -504,6 +536,17 @@ class ModernGLContext:
             fragment_shader=TRANSPARENT_RECT_FRAGMENT_SHADER
         )
         # Uses the same quad_vbo as regular rectangles
+        
+        # ====================================================================
+        # Texture blitting (for static overlays like text)
+        # ====================================================================
+        
+        # Compile texture blit shader program
+        self.texture_blit_prog = self.ctx.program(
+            vertex_shader=TEXTURE_BLIT_VERTEX_SHADER,
+            fragment_shader=TEXTURE_BLIT_FRAGMENT_SHADER
+        )
+        # Uses the same fullscreen_vbo
     
     def cleanup(self):
         """Release GPU resources
@@ -887,6 +930,40 @@ def render_transparent_rectangles(
     color_vbo.release()
     rect_vbo.release()
     brightness_vbo.release()
+
+
+def blit_texture(ctx: ModernGLContext, texture: moderngl.Texture, alpha: float = 1.0):
+    """Blit a texture onto the current framebuffer with alpha blending
+    
+    Renders a fullscreen textured quad with alpha blending enabled.
+    Used for static overlays like text labels.
+    
+    Side effects:
+    - Renders to current framebuffer
+    - Modifies GPU state
+    
+    Args:
+        ctx: ModernGL context
+        texture: Texture to blit (must have alpha channel)
+        alpha: Global alpha multiplier (0.0-1.0)
+    """
+    # Bind texture to slot 0
+    texture.use(0)
+    ctx.texture_blit_prog['u_texture'].value = 0
+    ctx.texture_blit_prog['u_alpha'].value = alpha
+    
+    # Create VAO for fullscreen quad
+    blit_vao = ctx.ctx.vertex_array(
+        ctx.texture_blit_prog,
+        [(ctx.fullscreen_vbo, '2f', 'in_position')]
+    )
+    
+    # Render fullscreen quad to current framebuffer with alpha blending
+    ctx.fbo.use()
+    blit_vao.render(moderngl.TRIANGLE_STRIP, vertices=4)
+    
+    # Cleanup
+    blit_vao.release()
 
 
 def read_framebuffer(ctx: ModernGLContext) -> np.ndarray:

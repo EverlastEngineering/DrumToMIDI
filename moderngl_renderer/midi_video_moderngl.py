@@ -33,7 +33,7 @@ from moderngl_renderer.midi_animation import (
     get_visible_notes_at_time,
     calculate_note_y_at_time
 )
-from moderngl_renderer.shell import ModernGLContext, render_rectangles, render_rectangles_no_glow, render_circles, render_transparent_rectangles, read_framebuffer
+from moderngl_renderer.shell import ModernGLContext, render_rectangles, render_rectangles_no_glow, render_circles, render_transparent_rectangles, blit_texture, read_framebuffer
 from moderngl_renderer.midi_video_core import (
     midi_note_to_rectangle,
     create_strike_line_rectangle,
@@ -42,6 +42,7 @@ from moderngl_renderer.midi_video_core import (
     create_kick_hit_indicators,
     create_progress_bar
 )
+from moderngl_renderer.text_overlay import create_lane_labels_overlay
 
 
 def render_midi_to_video_moderngl(
@@ -220,6 +221,26 @@ def render_midi_to_video_moderngl(
             lane_markers = create_lane_markers(num_lanes)
             strike_line = create_strike_line_rectangle()
             
+            # Create text overlay for lane labels (render once, upload to GPU)
+            if verbose:
+                print("Creating lane label overlay...")
+            text_overlay_pil = create_lane_labels_overlay(
+                width=width,
+                height=height,
+                drum_map=STANDARD_GM_DRUM_MAP,
+                num_lanes=num_lanes,
+                drum_notes=drum_notes,  # Filter to only show drums that appear in MIDI
+                font_size=int(height * 0.0176)  # 1.76% of screen height (30% bigger)
+            )
+            # Convert PIL image to bytes and upload as GPU texture
+            text_overlay_bytes = text_overlay_pil.tobytes()
+            text_texture = ctx.ctx.texture((width, height), 4, text_overlay_bytes)
+            text_texture.filter = (ctx.ctx.LINEAR, ctx.ctx.LINEAR)
+            
+            if verbose:
+                print("✓ Text overlay ready")
+                print()
+            
             for frame_num in range(total_frames):
                 current_time = frame_num / fps
                 
@@ -268,6 +289,20 @@ def render_midi_to_video_moderngl(
                 progress = current_time / duration if duration > 0 else 0.0
                 progress_bar = create_progress_bar(progress)
                 render_rectangles_no_glow(ctx, [progress_bar], time=current_time)
+                
+                # Layer 7: Text overlay (lane labels, static texture blit with fade)
+                # Fade out after 5 seconds: full opacity 0-5s, fade over 3s (5-8s), invisible after 8s
+                if current_time < 5.0:
+                    text_alpha = 1.0  # Full opacity
+                elif current_time < 8.0:
+                    # Linear fade over 3 seconds
+                    fade_progress = (current_time - 5.0) / 3.0
+                    text_alpha = 1.0 - fade_progress
+                else:
+                    text_alpha = 0.0  # Fully transparent
+                
+                if text_alpha > 0.0:
+                    blit_texture(ctx, text_texture, alpha=text_alpha)
                 
                 frame = read_framebuffer(ctx)
                 

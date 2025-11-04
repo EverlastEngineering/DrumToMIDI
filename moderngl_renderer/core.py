@@ -372,3 +372,110 @@ def create_background_lanes(
         })
     
     return backgrounds
+
+
+# ============================================================================
+# Ending Image Fade Logic
+# ============================================================================
+
+def calculate_ending_image_alpha(
+    current_time: float,
+    duration: float,
+    fade_duration: float = 4.0,
+    hold_duration: float = 1.0
+) -> float:
+    """Calculate alpha value for ending image fade-in effect
+    
+    Pure function that determines transparency of ending image based on time.
+    Fades in over the last N seconds of video, then holds at full opacity.
+    
+    Args:
+        current_time: Current playback time in seconds
+        duration: Total video duration in seconds
+        fade_duration: Duration of fade-in effect in seconds (default: 4.0)
+        hold_duration: Duration to hold at full opacity in seconds (default: 1.0)
+    
+    Returns:
+        Alpha value between 0.0 (transparent) and 1.0 (opaque)
+        
+    Examples:
+        >>> calculate_ending_image_alpha(5.0, 10.0, 4.0, 1.0)  # Before fade starts
+        0.0
+        >>> calculate_ending_image_alpha(7.0, 10.0, 4.0, 1.0)  # Halfway through fade
+        0.5
+        >>> calculate_ending_image_alpha(9.0, 10.0, 4.0, 1.0)  # Fade complete
+        1.0
+        >>> calculate_ending_image_alpha(10.0, 10.0, 4.0, 1.0)  # Holding at full
+        1.0
+    """
+    # Fade starts at duration - fade_duration - hold_duration
+    # So it finishes fading at duration - hold_duration, then holds
+    fade_start_time = duration - fade_duration - hold_duration
+    fade_end_time = duration - hold_duration
+    
+    if current_time < fade_start_time:
+        return 0.0  # Not visible yet
+    
+    if current_time >= fade_end_time:
+        return 1.0  # Holding at full opacity
+    
+    # Calculate progress through fade (0.0 to 1.0)
+    fade_progress = (current_time - fade_start_time) / fade_duration
+    
+    # Clamp to [0.0, 1.0]
+    return min(max(fade_progress, 0.0), 1.0)
+
+
+def calculate_image_dimensions_with_aspect_ratio(
+    image_width: int,
+    image_height: int,
+    canvas_width: int,
+    canvas_height: int,
+    margin_percent: float = 0.30
+) -> Tuple[int, int, int, int]:
+    """Calculate dimensions to fit image within canvas with fixed aspect ratio and margins
+    
+    Pure function that calculates the target dimensions and position for an image
+    to fit within a canvas while maintaining aspect ratio and applying margins.
+    
+    Args:
+        image_width: Original image width in pixels
+        image_height: Original image height in pixels
+        canvas_width: Target canvas width in pixels
+        canvas_height: Target canvas height in pixels
+        margin_percent: Margin as percentage of canvas (0.30 = 30% margins on each side)
+    
+    Returns:
+        Tuple of (new_width, new_height, x_offset, y_offset) in pixels
+        - new_width, new_height: Scaled dimensions maintaining aspect ratio
+        - x_offset, y_offset: Position to center the image (top-left corner)
+    
+    Examples:
+        >>> # 1000x500 image in 1920x1080 canvas with 30% margin
+        >>> calculate_image_dimensions_with_aspect_ratio(1000, 500, 1920, 1080, 0.30)
+        (1344, 672, 288, 204)
+    """
+    # Calculate available space after margins
+    margin_factor = 1.0 - (2.0 * margin_percent)
+    available_width = canvas_width * margin_factor
+    available_height = canvas_height * margin_factor
+    
+    # Calculate aspect ratios
+    image_aspect = image_width / image_height
+    available_aspect = available_width / available_height
+    
+    # Determine scaling based on which dimension is the limiting factor
+    if image_aspect > available_aspect:
+        # Image is wider - width is limiting factor
+        new_width = int(available_width)
+        new_height = int(available_width / image_aspect)
+    else:
+        # Image is taller - height is limiting factor
+        new_height = int(available_height)
+        new_width = int(available_height * image_aspect)
+    
+    # Calculate offsets to center the image
+    x_offset = (canvas_width - new_width) // 2
+    y_offset = (canvas_height - new_height) // 2
+    
+    return (new_width, new_height, x_offset, y_offset)

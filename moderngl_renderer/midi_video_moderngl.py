@@ -42,7 +42,9 @@ from moderngl_renderer.midi_video_core import (
     create_kick_hit_indicators,
     create_progress_bar
 )
+from moderngl_renderer.core import calculate_ending_image_alpha, calculate_image_dimensions_with_aspect_ratio
 from moderngl_renderer.text_overlay import create_lane_labels_overlay
+from PIL import Image
 
 
 def render_midi_to_video_moderngl(
@@ -242,6 +244,34 @@ def render_midi_to_video_moderngl(
             
             if verbose:
                 print("✓ Text overlay ready")
+            
+            # Load and prepare ending image (render once, upload to GPU)
+            if verbose:
+                print("Loading ending image...")
+            ending_image_path = Path(__file__).parent / "large_logo3b@2x.png"
+            ending_image_original = Image.open(ending_image_path).convert("RGBA")
+            
+            # Calculate dimensions to maintain aspect ratio with 30% margins
+            img_w, img_h, x_offset, y_offset = calculate_image_dimensions_with_aspect_ratio(
+                image_width=ending_image_original.width,
+                image_height=ending_image_original.height,
+                canvas_width=width,
+                canvas_height=height,
+                margin_percent=0.30
+            )
+            
+            # Create a transparent canvas and paste the scaled image centered
+            ending_canvas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+            ending_image_scaled = ending_image_original.resize((img_w, img_h), Image.LANCZOS)
+            ending_canvas.paste(ending_image_scaled, (x_offset, y_offset))
+            
+            # Upload to GPU texture
+            ending_image_bytes = ending_canvas.tobytes()
+            ending_texture = ctx.ctx.texture((width, height), 4, ending_image_bytes)
+            ending_texture.filter = (ctx.ctx.LINEAR, ctx.ctx.LINEAR)
+            
+            if verbose:
+                print(f"✓ Ending image ready ({ending_image_original.width}x{ending_image_original.height} → {img_w}x{img_h} with margins)")
                 print()
             
             # Initialize async framebuffer reader for better performance
@@ -311,6 +341,16 @@ def render_midi_to_video_moderngl(
                 
                 if text_alpha > 0.0:
                     blit_texture(ctx, text_texture, alpha=text_alpha)
+                
+                # Layer 8: Ending image (fade in over 4s, hold for 1s)
+                ending_alpha = calculate_ending_image_alpha(
+                    current_time=current_time,
+                    duration=duration,
+                    fade_duration=4.0,
+                    hold_duration=1.0
+)
+                if ending_alpha > 0.0:
+                    blit_texture(ctx, ending_texture, alpha=ending_alpha)
                 
                 # === Async PBO Pipeline ===
                 # Start async read of current frame (frame N) to PBO

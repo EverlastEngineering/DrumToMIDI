@@ -304,3 +304,183 @@ class TestStrikeLineAndMarkers:
         )
         
         assert markers == []
+
+
+class TestEndingImageAlpha:
+    """Test ending image fade-in alpha calculation with hold period"""
+    
+    def test_before_fade_invisible(self):
+        """Before fade starts, alpha should be 0.0"""
+        from moderngl_renderer.core import calculate_ending_image_alpha
+        # Fade starts at 10 - 4 - 1 = 5.0, so at 3.0 it's invisible
+        alpha = calculate_ending_image_alpha(
+            current_time=3.0,
+            duration=10.0,
+            fade_duration=4.0,
+            hold_duration=1.0
+        )
+        assert alpha == 0.0
+    
+    def test_at_fade_start(self):
+        """At fade start, alpha should be 0.0"""
+        from moderngl_renderer.core import calculate_ending_image_alpha
+        # Fade starts at 10 - 4 - 1 = 5.0
+        alpha = calculate_ending_image_alpha(
+            current_time=5.0,
+            duration=10.0,
+            fade_duration=4.0,
+            hold_duration=1.0
+        )
+        assert alpha == 0.0
+    
+    def test_middle_of_fade(self):
+        """Middle of fade should be 50% alpha"""
+        from moderngl_renderer.core import calculate_ending_image_alpha
+        # Fade from 5.0 to 9.0, middle is 7.0
+        alpha = calculate_ending_image_alpha(
+            current_time=7.0,
+            duration=10.0,
+            fade_duration=4.0,
+            hold_duration=1.0
+        )
+        assert alpha == pytest.approx(0.5, abs=0.01)
+    
+    def test_end_of_fade_fully_visible(self):
+        """At end of fade, alpha should be 1.0"""
+        from moderngl_renderer.core import calculate_ending_image_alpha
+        # Fade ends at 10 - 1 = 9.0
+        alpha = calculate_ending_image_alpha(
+            current_time=9.0,
+            duration=10.0,
+            fade_duration=4.0,
+            hold_duration=1.0
+        )
+        assert alpha == 1.0
+    
+    def test_during_hold_period(self):
+        """During hold period, alpha should remain 1.0"""
+        from moderngl_renderer.core import calculate_ending_image_alpha
+        # Hold period is 9.0 to 10.0
+        alpha = calculate_ending_image_alpha(
+            current_time=9.5,
+            duration=10.0,
+            fade_duration=4.0,
+            hold_duration=1.0
+        )
+        assert alpha == 1.0
+    
+    def test_at_duration_end(self):
+        """At end of duration, alpha should be 1.0"""
+        from moderngl_renderer.core import calculate_ending_image_alpha
+        alpha = calculate_ending_image_alpha(
+            current_time=10.0,
+            duration=10.0,
+            fade_duration=4.0,
+            hold_duration=1.0
+        )
+        assert alpha == 1.0
+    
+    def test_linear_fade_progression(self):
+        """Fade should progress linearly"""
+        from moderngl_renderer.core import calculate_ending_image_alpha
+        duration = 10.0
+        fade_duration = 4.0
+        hold_duration = 1.0
+        # Fade: 5.0 to 9.0
+        
+        alpha_at_0_pct = calculate_ending_image_alpha(5.0, duration, fade_duration, hold_duration)
+        alpha_at_25_pct = calculate_ending_image_alpha(6.0, duration, fade_duration, hold_duration)
+        alpha_at_50_pct = calculate_ending_image_alpha(7.0, duration, fade_duration, hold_duration)
+        alpha_at_75_pct = calculate_ending_image_alpha(8.0, duration, fade_duration, hold_duration)
+        alpha_at_100_pct = calculate_ending_image_alpha(9.0, duration, fade_duration, hold_duration)
+        
+        assert alpha_at_0_pct == pytest.approx(0.0, abs=0.01)
+        assert alpha_at_25_pct == pytest.approx(0.25, abs=0.01)
+        assert alpha_at_50_pct == pytest.approx(0.5, abs=0.01)
+        assert alpha_at_75_pct == pytest.approx(0.75, abs=0.01)
+        assert alpha_at_100_pct == pytest.approx(1.0, abs=0.01)
+    
+    def test_short_video_with_defaults(self):
+        """Test with a short video duration"""
+        from moderngl_renderer.core import calculate_ending_image_alpha
+        # 6 second video: fade 1.0-5.0, hold 5.0-6.0
+        alpha_before = calculate_ending_image_alpha(0.5, 6.0, 4.0, 1.0)
+        alpha_at_start = calculate_ending_image_alpha(1.0, 6.0, 4.0, 1.0)
+        alpha_middle = calculate_ending_image_alpha(3.0, 6.0, 4.0, 1.0)
+        alpha_at_hold = calculate_ending_image_alpha(5.5, 6.0, 4.0, 1.0)
+        
+        assert alpha_before == 0.0
+        assert alpha_at_start == 0.0
+        assert alpha_middle == pytest.approx(0.5, abs=0.01)
+        assert alpha_at_hold == 1.0
+
+
+class TestImageDimensionsWithAspectRatio:
+    """Test image scaling with aspect ratio preservation and margins"""
+    
+    def test_wide_image_limited_by_width(self):
+        """Wide image should be constrained by width"""
+        from moderngl_renderer.core import calculate_image_dimensions_with_aspect_ratio
+        # 2000x1000 image (2:1 ratio) in 1920x1080 canvas with 30% margins
+        # Available space: 1920*0.4 = 768w, 1080*0.4 = 432h
+        # Image aspect 2:1 > available aspect 768/432=1.78, so width-limited
+        w, h, x, y = calculate_image_dimensions_with_aspect_ratio(2000, 1000, 1920, 1080, 0.30)
+        
+        # Should scale to fit width: 768w, 384h
+        assert w == 768
+        assert h == 384
+        # Centered: x=(1920-768)/2=576, y=(1080-384)/2=348
+        assert x == 576
+        assert y == 348
+    
+    def test_tall_image_limited_by_height(self):
+        """Tall image should be constrained by height"""
+        from moderngl_renderer.core import calculate_image_dimensions_with_aspect_ratio
+        # 1000x2000 image (1:2 ratio) in 1920x1080 canvas with 30% margins
+        # Available space: 768w, 432h
+        # Image aspect 0.5 < available aspect 1.78, so height-limited
+        w, h, x, y = calculate_image_dimensions_with_aspect_ratio(1000, 2000, 1920, 1080, 0.30)
+        
+        # Should scale to fit height: 216w, 432h
+        assert w == 216
+        assert h == 432
+        # Centered: x=(1920-216)/2=852, y=(1080-432)/2=324
+        assert x == 852
+        assert y == 324
+    
+    def test_square_image(self):
+        """Square image should scale uniformly"""
+        from moderngl_renderer.core import calculate_image_dimensions_with_aspect_ratio
+        # 1000x1000 square image in 1920x1080 canvas with 30% margins
+        w, h, x, y = calculate_image_dimensions_with_aspect_ratio(1000, 1000, 1920, 1080, 0.30)
+        
+        # Height is limiting factor (432 < 768)
+        assert w == 432
+        assert h == 432
+        assert x == (1920 - 432) // 2
+        assert y == (1080 - 432) // 2
+    
+    def test_different_margin_percentage(self):
+        """Test with 20% margins instead of 30%"""
+        from moderngl_renderer.core import calculate_image_dimensions_with_aspect_ratio
+        # With 20% margins, available space is 60% of canvas
+        w, h, x, y = calculate_image_dimensions_with_aspect_ratio(1000, 1000, 1000, 1000, 0.20)
+        
+        # Available: 600x600, square fits exactly
+        assert w == 600
+        assert h == 600
+        assert x == 200  # (1000-600)/2
+        assert y == 200
+    
+    def test_aspect_ratio_preserved(self):
+        """Verify aspect ratio is maintained"""
+        from moderngl_renderer.core import calculate_image_dimensions_with_aspect_ratio
+        original_w, original_h = 1920, 1080
+        original_aspect = original_w / original_h
+        
+        w, h, x, y = calculate_image_dimensions_with_aspect_ratio(
+            original_w, original_h, 800, 600, 0.25
+        )
+        
+        result_aspect = w / h
+        assert abs(result_aspect - original_aspect) < 0.01

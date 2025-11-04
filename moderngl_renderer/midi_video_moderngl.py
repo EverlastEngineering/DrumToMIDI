@@ -33,12 +33,13 @@ from moderngl_renderer.midi_animation import (
     get_visible_notes_at_time,
     calculate_note_y_at_time
 )
-from moderngl_renderer.shell import ModernGLContext, render_rectangles, render_rectangles_no_glow, render_circles, read_framebuffer
+from moderngl_renderer.shell import ModernGLContext, render_rectangles, render_rectangles_no_glow, render_circles, render_transparent_rectangles, read_framebuffer
 from moderngl_renderer.midi_video_core import (
     midi_note_to_rectangle,
     create_strike_line_rectangle,
     create_lane_markers,
-    create_hit_indicator_circles
+    create_hit_indicator_circles,
+    create_kick_hit_indicators
 )
 
 
@@ -252,7 +253,12 @@ def render_midi_to_video_moderngl(
                 # Layer 3: Strike line (on top)
                 render_rectangles_no_glow(ctx, [strike_line], time=current_time)
                 
-                # Layer 4: Hit indicator circles (expanding burst effect)
+                # Layer 4: Kick hit indicators (expanding rectangles for kick drum)
+                kick_indicators = create_kick_hit_indicators(anim_notes, current_time)
+                if kick_indicators:
+                    render_transparent_rectangles(ctx, kick_indicators)
+                
+                # Layer 5: Hit indicator circles (expanding burst effect for regular notes)
                 hit_circles = create_hit_indicator_circles(anim_notes, current_time)
                 if hit_circles:
                     render_circles(ctx, hit_circles)

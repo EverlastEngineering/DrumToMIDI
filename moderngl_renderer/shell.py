@@ -306,6 +306,42 @@ void main() {
 }
 """
 
+# Transparent rectangle shaders (alpha-blended rectangles without rounded corners)
+TRANSPARENT_RECT_VERTEX_SHADER = """
+#version 330
+
+in vec2 in_position;      // Vertex position (0-1 quad)
+in vec3 in_color;         // Per-instance color
+in vec4 in_rect;          // Per-instance: x, y, width, height (normalized coords)
+in float in_brightness;   // Per-instance: brightness/alpha (0.0-1.0)
+
+out vec3 v_color;
+out float v_brightness;
+
+void main() {
+    // Transform unit quad (0-1) to rectangle position and size
+    vec2 pos = in_rect.xy + in_position * in_rect.zw;
+    gl_Position = vec4(pos, 0.0, 1.0);
+    
+    v_color = in_color;
+    v_brightness = in_brightness;
+}
+"""
+
+TRANSPARENT_RECT_FRAGMENT_SHADER = """
+#version 330
+
+in vec3 v_color;
+in float v_brightness;
+
+out vec4 f_color;
+
+void main() {
+    // Simple alpha-blended rectangle
+    f_color = vec4(v_color, v_brightness);
+}
+"""
+
 # ============================================================================
 # GPU Context and Resource Management
 # ============================================================================
@@ -457,6 +493,17 @@ class ModernGLContext:
             circle_vertices.append([x, y])
         circle_vertices = np.array(circle_vertices, dtype='f4')
         self.circle_vbo = self.ctx.buffer(circle_vertices.tobytes())
+        
+        # ====================================================================
+        # Transparent rectangle rendering (alpha-blended rectangles)
+        # ====================================================================
+        
+        # Compile transparent rectangle shader program
+        self.transparent_rect_prog = self.ctx.program(
+            vertex_shader=TRANSPARENT_RECT_VERTEX_SHADER,
+            fragment_shader=TRANSPARENT_RECT_FRAGMENT_SHADER
+        )
+        # Uses the same quad_vbo as regular rectangles
     
     def cleanup(self):
         """Release GPU resources
@@ -768,6 +815,78 @@ def render_circles(
     circle_vao.release()
     color_vbo.release()
     circle_vbo.release()
+
+
+def render_transparent_rectangles(
+    ctx: ModernGLContext,
+    rectangles: List[Dict[str, Any]]
+) -> None:
+    """Render transparent/alpha-blended rectangles on top of current framebuffer
+    
+    Renders simple rectangles with alpha transparency. No rounded corners,
+    no outlines, no glow - just alpha-blended colored rectangles.
+    
+    Side effects:
+    - Renders to current framebuffer (ctx.fbo)
+    - Uploads data to GPU
+    - Executes draw call
+    - Allocates/deallocates GPU buffers
+    
+    Args:
+        ctx: ModernGL context
+        rectangles: List of rectangle specifications with keys:
+                    x, y (top-left corner in normalized coords)
+                    width, height (size in normalized coords)
+                    color (RGB tuple 0-1)
+                    brightness (alpha value 0-1)
+    """
+    if not rectangles:
+        return
+    
+    # Prepare instanced data
+    colors = []
+    rect_data = []  # x, y, width, height
+    brightness_data = []
+    
+    for rect in rectangles:
+        colors.append(rect['color'])
+        rect_data.append([
+            rect['x'],
+            rect['y'] - rect['height'],  # Convert from top-left to bottom-left
+            rect['width'],
+            rect['height']
+        ])
+        brightness_data.append(rect['brightness'])
+    
+    colors = np.array(colors, dtype='f4')
+    rect_data = np.array(rect_data, dtype='f4')
+    brightness_data = np.array(brightness_data, dtype='f4')
+    
+    # Upload instanced data
+    color_vbo = ctx.ctx.buffer(colors.tobytes())
+    rect_vbo = ctx.ctx.buffer(rect_data.tobytes())
+    brightness_vbo = ctx.ctx.buffer(brightness_data.tobytes())
+    
+    # Create VAO for instanced rendering
+    transparent_vao = ctx.ctx.vertex_array(
+        ctx.transparent_rect_prog,
+        [
+            (ctx.quad_vbo, '2f', 'in_position'),         # Per-vertex (shared quad)
+            (color_vbo, '3f/i', 'in_color'),             # Per-instance
+            (rect_vbo, '4f/i', 'in_rect'),               # Per-instance
+            (brightness_vbo, '1f/i', 'in_brightness'),   # Per-instance
+        ]
+    )
+    
+    # Render rectangles to current framebuffer
+    ctx.fbo.use()
+    transparent_vao.render(moderngl.TRIANGLE_STRIP, vertices=4, instances=len(rectangles))
+    
+    # Cleanup
+    transparent_vao.release()
+    color_vbo.release()
+    rect_vbo.release()
+    brightness_vbo.release()
 
 
 def read_framebuffer(ctx: ModernGLContext) -> np.ndarray:

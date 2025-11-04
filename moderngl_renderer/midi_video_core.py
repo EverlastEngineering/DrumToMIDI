@@ -326,3 +326,73 @@ def create_hit_indicator_circles(
             })
     
     return circles
+
+
+def create_kick_hit_indicators(
+    anim_notes: List[Any],
+    current_time: float,
+    strike_line_y: float = -0.6,
+    hit_window: float = 0.24,
+    max_height: float = 0.3
+) -> List[Dict[str, Any]]:
+    """Create expanding rectangle indicators for kick drum hitting the strike line
+    
+    Pure function that generates rectangle specifications for kick hit feedback.
+    Creates rectangular "pulse" effects that expand vertically and fade when kicks hit.
+    
+    Args:
+        anim_notes: All animation notes with hit_time, is_kick, color attributes
+        current_time: Current playback time in seconds
+        strike_line_y: Y position of strike line (normalized coords)
+        hit_window: Time window to show indicators after hit (seconds)
+        max_height: Maximum rectangle height (normalized coords)
+    
+    Returns:
+        List of rectangle dicts for render_transparent_rectangles() with keys:
+        x, y, width, height, color, brightness
+    
+    Examples:
+        >>> # Kick hits at t=1.0, check at t=1.04 (halfway through window)
+        >>> rects = create_kick_hit_indicators(notes, 1.04)
+        >>> len(rects)  # Should have rectangles for recent kick hits
+        1
+        >>> rects[0]['height']  # Should be expanding
+        0.225  # 75% of max height
+    """
+    rectangles = []
+    
+    for note in anim_notes:
+        # Only process kick drum notes
+        if not note.is_kick:
+            continue
+        
+        # Calculate time since hit
+        time_since_hit = current_time - note.hit_time
+        
+        # Only show indicators during hit window
+        if 0 <= time_since_hit <= hit_window:
+            # Progress: 0.0 at hit, 1.0 at end of window
+            progress = time_since_hit / hit_window
+            
+            # Height expands quickly then slows down (ease-out quadratic)
+            height = max_height * (1.0 - (1.0 - progress) ** 2)
+            
+            # Brightness fades out (quadratic for faster fade)
+            brightness = (1.0 - progress) ** 2 * 0.6  # Max alpha of 0.6
+            
+            # Skip if too dim to see
+            if brightness < 0.05:
+                continue
+            
+            # Full-width rectangle expanding from strike line
+            # Y coordinate is top edge, expanding upward from strike line
+            rectangles.append({
+                'x': -1.0,  # Full width from left edge
+                'y': strike_line_y + height / 2.0,  # Top edge (expanding upward)
+                'width': 2.0,  # Full screen width
+                'height': height,
+                'color': note.color,  # Keep original color
+                'brightness': brightness  # Alpha transparency
+            })
+    
+    return rectangles

@@ -1176,6 +1176,9 @@ class AsyncFramebufferReader:
         
         # Track if first frame (no previous data yet)
         self.first_frame = True
+        
+        # Pre-allocate output buffer to avoid repeated allocations
+        self.output_buffer = np.empty((ctx.height, ctx.width, 3), dtype='u1')
     
     def start_read(self) -> None:
         """Start async read from framebuffer to current PBO (non-blocking)
@@ -1206,13 +1209,14 @@ class AsyncFramebufferReader:
                 raw = self.previous_pbo.read()
             
             with time_operation(self.ctx.timings, 'pbo_process_pixels'):
-                # Convert to numpy array
-                img = np.frombuffer(raw, dtype='u1').reshape((self.height, self.width, 3))
+                # Reshape raw bytes into pre-allocated buffer (zero-copy view)
+                img_view = np.frombuffer(raw, dtype='u1').reshape((self.height, self.width, 3))
                 
-                # Flip vertically (OpenGL origin is bottom-left, images are top-left)
-                img = np.flip(img, axis=0).copy()
-            
-            return img
+                # Copy into pre-allocated buffer with vertical flip
+                # This is faster than flip+copy because we control the destination
+                self.output_buffer[:] = img_view[::-1, :, :]
+                
+                return self.output_buffer
     
     def swap_buffers(self) -> None:
         """Swap current and previous PBOs for next frame"""

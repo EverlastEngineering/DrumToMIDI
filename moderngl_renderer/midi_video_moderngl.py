@@ -33,7 +33,7 @@ from moderngl_renderer.midi_animation import (
     get_visible_notes_at_time,
     calculate_note_y_at_time
 )
-from moderngl_renderer.shell import ModernGLContext, render_rectangles, render_rectangles_no_glow, render_circles, render_transparent_rectangles, blit_texture, read_framebuffer
+from moderngl_renderer.shell import ModernGLContext, render_rectangles, render_rectangles_no_glow, render_circles, render_transparent_rectangles, blit_texture, read_framebuffer, AsyncFramebufferReader
 from moderngl_renderer.midi_video_core import (
     midi_note_to_rectangle,
     create_strike_line_rectangle,
@@ -55,7 +55,8 @@ def render_midi_to_video_moderngl(
     corner_radius: float = 8.0,
     tail_duration: float = 3.0,
     fall_speed_multiplier: float = 1.0,
-    verbose: bool = True
+    verbose: bool = True,
+    enable_timing: bool = False
 ) -> None:
     """Render MIDI file to video using ModernGL GPU acceleration
     
@@ -70,6 +71,7 @@ def render_midi_to_video_moderngl(
         tail_duration: Extra time after last note (seconds)
         fall_speed_multiplier: Speed multiplier for falling notes (1.0 = default, 0.5 = half speed, 2.0 = double speed)
         verbose: Print progress information
+        enable_timing: Enable detailed performance timing (default False)
         
     Raises:
         FileNotFoundError: If MIDI file not found
@@ -211,7 +213,8 @@ def render_midi_to_video_moderngl(
         corner_radius=corner_radius,
         blur_radius=8.0,         # More prominent glow
         glow_strength=0.8,       # Stronger glow intensity
-        glow_offset_pixels=0.0   # Shift glow up by 3 pixels
+        glow_offset_pixels=0.0,  # Shift glow up by 3 pixels
+        enable_timing=enable_timing
     ) as ctx:
             if verbose:
                 print("✓ GPU ready, rendering...")
@@ -241,7 +244,12 @@ def render_midi_to_video_moderngl(
                 print("✓ Text overlay ready")
                 print()
             
+            # Initialize async framebuffer reader for better performance
+            async_reader = AsyncFramebufferReader(ctx)
+            
             for frame_num in range(total_frames):
+                frame_start = time.perf_counter() if enable_timing else None
+                
                 current_time = frame_num / fps
                 
                 # Build notes with glow effect
@@ -304,17 +312,32 @@ def render_midi_to_video_moderngl(
                 if text_alpha > 0.0:
                     blit_texture(ctx, text_texture, alpha=text_alpha)
                 
-                frame = read_framebuffer(ctx)
+                # === Async PBO Pipeline ===
+                # Start async read of current frame (frame N) to PBO
+                async_reader.start_read()
                 
-                # Write to FFmpeg
-                try:
-                    process.stdin.write(frame.tobytes())
-                except BrokenPipeError:
-                    # FFmpeg process died
-                    stderr_output = process.stderr.read().decode('utf-8') if process.stderr else ''
-                    raise RuntimeError(f"FFmpeg pipe broken. FFmpeg error: {stderr_output[-500:]}")
+                # Get previous frame (frame N-1) from PBO and write to FFmpeg
+                # This overlaps GPU→CPU transfer of frame N with encoding of frame N-1
+                frame = async_reader.get_previous_frame()
                 
-                frames_rendered += 1
+                # Write frame N-1 to FFmpeg (if available, skips first frame)
+                if frame is not None:
+                    try:
+                        process.stdin.write(frame.tobytes())
+                    except BrokenPipeError:
+                        # FFmpeg process died
+                        stderr_output = process.stderr.read().decode('utf-8') if process.stderr else ''
+                        raise RuntimeError(f"FFmpeg pipe broken. FFmpeg error: {stderr_output[-500:]}")
+                    
+                    frames_rendered += 1
+                
+                # Swap PBOs for next iteration
+                async_reader.swap_buffers()
+                
+                if enable_timing and frame_start is not None:
+                    frame_time = time.perf_counter() - frame_start
+                    if ctx.timings:
+                        ctx.timings.record('full_frame', frame_time)
                 
                 # Progress update every second
                 if verbose:
@@ -331,6 +354,23 @@ def render_midi_to_video_moderngl(
                               f"ETA: {eta:5.1f}s")
                         
                         last_progress_time = current_elapsed
+            
+            # Write the final frame (still in current PBO)
+            final_frame = async_reader.finalize()
+            try:
+                process.stdin.write(final_frame.tobytes())
+                frames_rendered += 1
+            except BrokenPipeError:
+                # FFmpeg process died
+                stderr_output = process.stderr.read().decode('utf-8') if process.stderr else ''
+                raise RuntimeError(f"FFmpeg pipe broken. FFmpeg error: {stderr_output[-500:]}")
+            
+            # Cleanup PBO resources
+            async_reader.cleanup()
+            
+            # Print timing summary if enabled
+            if enable_timing:
+                ctx.print_timing_summary("ModernGL Render Performance (with PBO Async)")
     
     except Exception as e:
         # Clean up FFmpeg process

@@ -984,7 +984,8 @@ def render_project_video(
     include_audio: Optional[bool] = None,  # Deprecated: kept for backward compatibility
     fall_speed_multiplier: float = 1.0,
     use_opencv: bool = False,
-    use_moderngl: bool = False
+    use_moderngl: bool = False,
+    enable_timing: bool = False
 ):
     """
     Render MIDI to video for a specific project.
@@ -1000,6 +1001,7 @@ def render_project_video(
         fall_speed_multiplier: Speed multiplier for falling notes (1.0 = default, 0.5 = half speed, 2.0 = double speed)
         use_opencv: Use OpenCV-based PIL renderer (legacy)
         use_moderngl: Use GPU-accelerated ModernGL renderer (faster, recommended)
+        enable_timing: Enable detailed performance timing output
     """
     # Handle backward compatibility with include_audio
     if include_audio is not None and audio_source is None:
@@ -1084,7 +1086,8 @@ def render_project_video(
             height=height,
             fps=fps,
             fall_speed_multiplier=fall_speed_multiplier,
-            verbose=True
+            verbose=True,
+            enable_timing=enable_timing
         )
         
         # Update project metadata
@@ -1228,6 +1231,8 @@ Examples:
                        help='Use GPU-accelerated ModernGL renderer (default on macOS)')
     parser.add_argument('--no-moderngl', action='store_true',
                        help='Disable ModernGL renderer and use PIL (slower)')
+    parser.add_argument('--timing', action='store_true',
+                       help='Enable detailed performance timing output (useful for profiling)')
     
     args = parser.parse_args()
     
@@ -1272,7 +1277,8 @@ Examples:
         audio_source=None if args.no_audio else 'original',
         fall_speed_multiplier=args.fall_speed,
         use_opencv=args.use_opencv,
-        use_moderngl=args.use_moderngl
+        use_moderngl=args.use_moderngl,
+        enable_timing=args.timing
     )
     
     return 0

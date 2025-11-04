@@ -12,7 +12,7 @@ services:
     
     # Expose web UI port
     ports:
-      - "49152:5000"  # LarsNet Web UI
+      - "4915:4915"  # LarsNet Web UI
     
     # Environment variables
     environment:

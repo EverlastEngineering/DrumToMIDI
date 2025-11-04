@@ -39,7 +39,8 @@ from moderngl_renderer.midi_video_core import (
     create_strike_line_rectangle,
     create_lane_markers,
     create_hit_indicator_circles,
-    create_kick_hit_indicators
+    create_kick_hit_indicators,
+    create_progress_bar
 )
 
 
@@ -176,7 +177,7 @@ def render_midi_to_video_moderngl(
         ffmpeg_cmd.extend([
             '-c:a', 'aac',
             '-b:a', '192k',
-            '-shortest'  # Match video duration
+            '-shortest'  # End video when shortest stream (usually MIDI) ends
         ])
     
     ffmpeg_cmd.append(str(output_path))
@@ -262,6 +263,11 @@ def render_midi_to_video_moderngl(
                 hit_circles = create_hit_indicator_circles(anim_notes, current_time)
                 if hit_circles:
                     render_circles(ctx, hit_circles)
+                
+                # Layer 6: Progress bar (top overlay)
+                progress = current_time / duration if duration > 0 else 0.0
+                progress_bar = create_progress_bar(progress)
+                render_rectangles_no_glow(ctx, [progress_bar], time=current_time)
                 
                 frame = read_framebuffer(ctx)
                 

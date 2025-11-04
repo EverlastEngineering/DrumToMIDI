@@ -221,6 +221,55 @@ def create_strike_line_rectangle(
     }
 
 
+def create_progress_bar(
+    progress: float,
+    y_position: float = 0.95,
+    height: float = 0.02,
+    padding: float = 0.05
+) -> Dict[str, Any]:
+    """Create progress bar rectangle specification
+    
+    Pure function that generates rectangle data for the progress bar.
+    Progress bar scrolls from left to right across the top of the screen.
+    
+    Args:
+        progress: Progress value (0.0-1.0), where 0.0 = start, 1.0 = complete
+        y_position: Y position of bar top edge in normalized coords
+        height: Bar height in normalized coords
+        padding: Horizontal padding from screen edges (normalized coords)
+    
+    Returns:
+        Rectangle dict for progress bar (white, no outline)
+    
+    Examples:
+        >>> create_progress_bar(0.0, 0.95, 0.02, 0.05)
+        {'x': -0.95, 'y': 0.95, 'width': 0.0, 'height': 0.02, ...}
+        
+        >>> create_progress_bar(0.5, 0.95, 0.02, 0.05)
+        {'x': -0.95, 'y': 0.95, 'width': 0.95, 'height': 0.02, ...}
+    """
+    # Clamp progress to valid range
+    progress = max(0.0, min(1.0, progress))
+    
+    # Available width after padding both sides
+    available_width = 2.0 - (2.0 * padding)
+    
+    # Width scales with progress within available space
+    width = available_width * progress
+    
+    # Start position is left edge + padding
+    x_start = -1.0 + padding
+    
+    return {
+        'x': x_start,  # Start from left edge + padding
+        'y': y_position,  # Top edge at specified position
+        'width': width,
+        'height': height,
+        'color': (1.0, 1.0, 1.0),  # White
+        'no_outline': True  # Skip outline for UI elements
+    }
+
+
 def create_lane_markers(num_lanes: int = 3) -> List[Dict[str, Any]]:
     """Create vertical lane marker rectangles
     
@@ -264,7 +313,7 @@ def create_hit_indicator_circles(
     anim_notes: List[Any],
     current_time: float,
     strike_line_y: float = -0.6,
-    hit_window: float = 0.24,
+    hit_window: float = 0.30,
     max_circle_size: float = 0.15
 ) -> List[Dict[str, Any]]:
     """Create expanding circle indicators for notes hitting the strike line

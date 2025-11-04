@@ -701,7 +701,7 @@ class MidiVideoRenderer:
             # Map video from stdin and audio from file
             ffmpeg_cmd.extend(['-map', '0:v:0', '-map', '1:a:0'])
             # Use shortest stream (in case audio is longer/shorter than video)
-            ffmpeg_cmd.append('-shortest')
+            # ffmpeg_cmd.append('-shortest')
         else:
             ffmpeg_cmd.append('-an')  # No audio
         

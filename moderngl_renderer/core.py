@@ -426,6 +426,83 @@ def calculate_ending_image_alpha(
     return min(max(fade_progress, 0.0), 1.0)
 
 
+def ease_out_cubic(t: float) -> float:
+    """Ease-out cubic easing function
+    
+    Starts fast, decelerates smoothly to stop.
+    
+    Args:
+        t: Progress value between 0.0 and 1.0
+    
+    Returns:
+        Eased value between 0.0 and 1.0
+        
+    Examples:
+        >>> ease_out_cubic(0.0)
+        0.0
+        >>> ease_out_cubic(0.5)
+        0.875
+        >>> ease_out_cubic(1.0)
+        1.0
+    """
+    return 1.0 - pow(1.0 - t, 3.0)
+
+
+def calculate_ending_image_y_position(
+    current_time: float,
+    duration: float,
+    fade_duration: float = 4.0,
+    hold_duration: float = 1.0,
+    image_height_normalized: float = 0.5
+) -> float:
+    """Calculate Y position for ending image with eased scroll animation
+    
+    Image starts above the screen and eases down to center, synchronized with fade-in.
+    Uses ease-out cubic for smooth deceleration.
+    
+    Args:
+        current_time: Current playback time in seconds
+        duration: Total video duration in seconds
+        fade_duration: Duration of fade-in effect in seconds
+        hold_duration: Duration to hold at center in seconds
+        image_height_normalized: Height of image in normalized coords (0.0 to 2.0)
+    
+    Returns:
+        Y offset in normalized coordinates (-1.0 to 1.0, where 0.0 is center)
+        Positive values move image down, negative values move up
+        
+    Examples:
+        >>> calculate_ending_image_y_position(3.0, 10.0, 4.0, 1.0, 0.5)  # Before animation
+        1.25
+        >>> calculate_ending_image_y_position(7.0, 10.0, 4.0, 1.0, 0.5)  # Middle of scroll
+        0.15625
+        >>> calculate_ending_image_y_position(9.0, 10.0, 4.0, 1.0, 0.5)  # At center
+        0.0
+    """
+    fade_start_time = duration - fade_duration - hold_duration
+    fade_end_time = duration - hold_duration
+    
+    # Start position: above screen (positive Y in OpenGL, accounting for image height)
+    start_y = 1.0 + (image_height_normalized / 2.0)
+    # End position: centered
+    end_y = 0.0
+    
+    if current_time < fade_start_time:
+        return start_y  # Above screen, not visible yet
+    
+    if current_time >= fade_end_time:
+        return end_y  # At center, holding position
+    
+    # Calculate progress through animation (0.0 to 1.0)
+    progress = (current_time - fade_start_time) / fade_duration
+    
+    # Apply ease-out cubic for smooth deceleration
+    eased_progress = ease_out_cubic(progress)
+    
+    # Interpolate from start to end position
+    return start_y + (end_y - start_y) * eased_progress
+
+
 def calculate_image_dimensions_with_aspect_ratio(
     image_width: int,
     image_height: int,

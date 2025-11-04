@@ -42,7 +42,7 @@ from moderngl_renderer.midi_video_core import (
     create_kick_hit_indicators,
     create_progress_bar
 )
-from moderngl_renderer.core import calculate_ending_image_alpha, calculate_image_dimensions_with_aspect_ratio
+from moderngl_renderer.core import calculate_ending_image_alpha, calculate_ending_image_y_position, calculate_image_dimensions_with_aspect_ratio
 from moderngl_renderer.text_overlay import create_lane_labels_overlay
 from PIL import Image
 
@@ -181,8 +181,8 @@ def render_midi_to_video_moderngl(
     if audio_path and Path(audio_path).exists():
         ffmpeg_cmd.extend([
             '-c:a', 'aac',
-            '-b:a', '192k',
-            '-shortest'  # End video when shortest stream (usually MIDI) ends
+            '-b:a', '192k' # ,
+            # '-shortest'  # End video when shortest stream (usually MIDI) ends
         ])
     
     ffmpeg_cmd.append(str(output_path))
@@ -257,7 +257,7 @@ def render_midi_to_video_moderngl(
                 image_height=ending_image_original.height,
                 canvas_width=width,
                 canvas_height=height,
-                margin_percent=0.30
+                margin_percent=0.10
             )
             
             # Create a transparent canvas and paste the scaled image centered
@@ -342,17 +342,23 @@ def render_midi_to_video_moderngl(
                 if text_alpha > 0.0:
                     blit_texture(ctx, text_texture, alpha=text_alpha)
                 
-                # Layer 8: Ending image (fade in over 4s, hold for 1s)
+                # Layer 8: Ending image (fade in over 4s, hold for 1s, scroll with ease)
                 ending_alpha = calculate_ending_image_alpha(
                     current_time=current_time,
                     duration=duration,
                     fade_duration=4.0,
                     hold_duration=1.0
-)
+                )
                 if ending_alpha > 0.0:
-                    blit_texture(ctx, ending_texture, alpha=ending_alpha)
-                
-                # === Async PBO Pipeline ===
+                    # Calculate scroll position with easing
+                    ending_y_offset = calculate_ending_image_y_position(
+                        current_time=current_time,
+                        duration=duration,
+                        fade_duration=4.0,
+                        hold_duration=1.0,
+                        image_height_normalized=img_h / height * 2.0  # Convert to normalized coords
+                    )
+                    blit_texture(ctx, ending_texture, alpha=ending_alpha, offset_y=ending_y_offset)                # === Async PBO Pipeline ===
                 # Start async read of current frame (frame N) to PBO
                 async_reader.start_read()
                 

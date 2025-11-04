@@ -484,3 +484,78 @@ class TestImageDimensionsWithAspectRatio:
         
         result_aspect = w / h
         assert abs(result_aspect - original_aspect) < 0.01
+
+
+class TestEasingFunctions:
+    """Test easing functions for animations"""
+    
+    def test_ease_out_cubic_boundaries(self):
+        """Ease-out cubic should map 0.0->0.0 and 1.0->1.0"""
+        from moderngl_renderer.core import ease_out_cubic
+        assert ease_out_cubic(0.0) == 0.0
+        assert ease_out_cubic(1.0) == 1.0
+    
+    def test_ease_out_cubic_midpoint(self):
+        """Ease-out cubic at 0.5 should be > 0.5 (faster start)"""
+        from moderngl_renderer.core import ease_out_cubic
+        result = ease_out_cubic(0.5)
+        assert result > 0.5  # Should be ahead of linear at midpoint
+        assert result == pytest.approx(0.875, abs=0.01)
+    
+    def test_ease_out_cubic_monotonic(self):
+        """Ease-out cubic should be monotonically increasing"""
+        from moderngl_renderer.core import ease_out_cubic
+        values = [ease_out_cubic(t) for t in [0.0, 0.25, 0.5, 0.75, 1.0]]
+        for i in range(len(values) - 1):
+            assert values[i] < values[i + 1]
+
+
+class TestEndingImageScrollPosition:
+    """Test ending image Y position calculation with easing"""
+    
+    def test_before_animation_starts(self):
+        """Before animation, image should be above screen"""
+        from moderngl_renderer.core import calculate_ending_image_y_position
+        # Duration 10s, fade 4s, hold 1s: animation starts at 5s
+        y_pos = calculate_ending_image_y_position(3.0, 10.0, 4.0, 1.0, 0.5)
+        # Should be at start position: 1.0 + 0.25 = 1.25 (above screen in OpenGL)
+        assert y_pos == pytest.approx(1.25, abs=0.01)
+    
+    def test_at_animation_start(self):
+        """At start of animation, should be at start position"""
+        from moderngl_renderer.core import calculate_ending_image_y_position
+        y_pos = calculate_ending_image_y_position(5.0, 10.0, 4.0, 1.0, 0.5)
+        assert y_pos == pytest.approx(1.25, abs=0.01)
+    
+    def test_during_animation_moving_down(self):
+        """During animation, should be moving toward center"""
+        from moderngl_renderer.core import calculate_ending_image_y_position
+        # At 7s (halfway through 4s animation from 5s to 9s)
+        y_pos = calculate_ending_image_y_position(7.0, 10.0, 4.0, 1.0, 0.5)
+        # Should be between start (1.25) and end (0.0)
+        # With ease-out, should be most of the way there
+        assert 0.0 < y_pos < 1.25
+        assert y_pos < 0.5  # More than halfway due to ease-out
+    
+    def test_at_center(self):
+        """At end of animation, should be centered"""
+        from moderngl_renderer.core import calculate_ending_image_y_position
+        # At 9s, animation complete (fade ends, hold starts)
+        y_pos = calculate_ending_image_y_position(9.0, 10.0, 4.0, 1.0, 0.5)
+        assert y_pos == pytest.approx(0.0, abs=0.01)
+    
+    def test_during_hold_stays_centered(self):
+        """During hold period, should stay at center"""
+        from moderngl_renderer.core import calculate_ending_image_y_position
+        y_pos = calculate_ending_image_y_position(9.5, 10.0, 4.0, 1.0, 0.5)
+        assert y_pos == pytest.approx(0.0, abs=0.01)
+    
+    def test_different_image_sizes(self):
+        """Larger images should start further above screen"""
+        from moderngl_renderer.core import calculate_ending_image_y_position
+        # Small image (0.3 normalized height)
+        y_small = calculate_ending_image_y_position(3.0, 10.0, 4.0, 1.0, 0.3)
+        # Large image (0.8 normalized height)
+        y_large = calculate_ending_image_y_position(3.0, 10.0, 4.0, 1.0, 0.8)
+        # Larger image should start higher up (more positive in OpenGL)
+        assert y_large > y_small

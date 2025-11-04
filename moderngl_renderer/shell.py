@@ -404,12 +404,14 @@ void main() {
 TEXTURE_BLIT_VERTEX_SHADER = """
 #version 330
 
+uniform vec2 u_offset;  // X, Y offset in normalized coords
+
 in vec2 in_position;  // Fullscreen quad vertices
 
 out vec2 v_texcoord;
 
 void main() {
-    gl_Position = vec4(in_position, 0.0, 1.0);
+    gl_Position = vec4(in_position + u_offset, 0.0, 1.0);
     // Convert from clip space (-1 to 1) to texture space (0 to 1)
     v_texcoord = (in_position + 1.0) * 0.5;
     // Flip Y axis for texture coordinates
@@ -1080,7 +1082,7 @@ def render_transparent_rectangles(
             brightness_vbo.release()
 
 
-def blit_texture(ctx: ModernGLContext, texture: moderngl.Texture, alpha: float = 1.0):
+def blit_texture(ctx: ModernGLContext, texture: moderngl.Texture, alpha: float = 1.0, offset_x: float = 0.0, offset_y: float = 0.0):
     """Blit a texture onto the current framebuffer with alpha blending
     
     Renders a fullscreen textured quad with alpha blending enabled.
@@ -1094,6 +1096,8 @@ def blit_texture(ctx: ModernGLContext, texture: moderngl.Texture, alpha: float =
         ctx: ModernGL context
         texture: Texture to blit (must have alpha channel)
         alpha: Global alpha multiplier (0.0-1.0)
+        offset_x: X offset in normalized coords (-1.0 to 1.0, default: 0.0)
+        offset_y: Y offset in normalized coords (-1.0 to 1.0, default: 0.0)
     """
     with time_operation(ctx.timings, 'blit_texture'):
         with time_operation(ctx.timings, 'blit_setup'):
@@ -1101,6 +1105,7 @@ def blit_texture(ctx: ModernGLContext, texture: moderngl.Texture, alpha: float =
             texture.use(0)
             ctx.texture_blit_prog['u_texture'].value = 0
             ctx.texture_blit_prog['u_alpha'].value = alpha
+            ctx.texture_blit_prog['u_offset'].value = (offset_x, offset_y)
             
             # Create VAO for fullscreen quad
             blit_vao = ctx.ctx.vertex_array(

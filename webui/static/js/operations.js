@@ -103,23 +103,29 @@ async function startVideo() {
         let width = 1920, height = 1080;
         
         switch(settings.resolution) {
+            case '640x360':
+                width = 640; height = 360;
+                break;
+            case '720p':
+                width = 1280; height = 720;
+                break;
             case '1080p':
                 width = 1920; height = 1080;
                 break;
             case '1440p':
                 width = 2560; height = 1440;
                 break;
-            case '4k':
-                width = 3840; height = 2160;
+            case '360x640':
+                width = 360; height = 640;
+                break;
+            case '720p-portrait':
+                width = 720; height = 1280;
                 break;
             case '1080p-portrait':
                 width = 1080; height = 1920;
                 break;
             case '1440p-portrait':
                 width = 1440; height = 2560;
-                break;
-            case '4k-portrait':
-                width = 2160; height = 3840;
                 break;
         }
         

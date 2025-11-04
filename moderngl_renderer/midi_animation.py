@@ -104,14 +104,19 @@ def calculate_note_height(fall_duration: float, pixels_per_second: float,
     
     Args:
         fall_duration: Time for note to fall from top to strike line (seconds)
-        pixels_per_second: Fall speed in pixels per second
+        pixels_per_second: Fall speed in pixels per second (includes fall_speed_multiplier)
         screen_height: Screen height in pixels
     
     Returns:
-        Note height in normalized coords (corresponds to ~150ms of fall time)
+        Note height in normalized coords (corresponds to ~60ms of fall time)
+    
+    Note:
+        Height scales with fall_speed_multiplier since pixels_per_second includes it.
+        At 1.0x speed: ~60ms of fall time
+        At 2.0x speed: ~60ms of fall time (but faster movement = same visual height)
     """
-    # Note should represent about 150ms of fall time
-    note_duration = 0.15  # seconds
+    # Note should represent about 60ms of fall time (40% of original 150ms)
+    note_duration = 0.07  # seconds
     note_height_pixels = pixels_per_second * note_duration
     
     # Convert to normalized coords

@@ -52,10 +52,10 @@ def calculate_strike_effect(
     progress = 1.0 - abs(distance) / strike_window
     
     # Scale pulse: 1.0 → 1.3 → 1.0 (stronger height increase)
-    scale_factor = 1.0 + 0.3 * progress * progress
+    scale_factor = 1.0 + 0.7 * progress * progress
     
     # Flash: peaks at strike line, fades at edges (more intense)
-    flash_alpha = 1.5 * progress * progress * progress
+    flash_alpha = 2.5 * progress * progress * progress
     
     # Brightness boost for enhanced glow (stronger)
     brightness_boost = 0.7 * progress
@@ -258,3 +258,71 @@ def create_lane_markers(num_lanes: int = 3) -> List[Dict[str, Any]]:
         })
     
     return markers
+
+
+def create_hit_indicator_circles(
+    anim_notes: List[Any],
+    current_time: float,
+    strike_line_y: float = -0.6,
+    hit_window: float = 0.24,
+    max_circle_size: float = 0.15
+) -> List[Dict[str, Any]]:
+    """Create expanding circle indicators for notes hitting the strike line
+    
+    Pure function that generates circle specifications for visual hit feedback.
+    Creates circular "burst" effects that expand and fade when notes hit.
+    
+    Args:
+        anim_notes: All animation notes with hit_time, x, color attributes
+        current_time: Current playback time in seconds
+        strike_line_y: Y position of strike line (normalized coords)
+        hit_window: Time window to show circles after hit (seconds)
+        max_circle_size: Maximum circle radius (normalized coords)
+    
+    Returns:
+        List of circle dicts for render_circles() with keys:
+        x, y, radius, color, brightness
+    
+    Examples:
+        >>> # Note hits at t=1.0, check at t=1.04 (halfway through window)
+        >>> circles = create_hit_indicator_circles(notes, 1.04)
+        >>> len(circles)  # Should have circles for recent hits
+        1
+        >>> circles[0]['brightness']  # Should be fading
+        0.36  # (1 - 0.5)^2 * 0.8 ≈ 0.2
+    """
+    circles = []
+    
+    for note in anim_notes:
+        # Skip kick drum (no circle indicator for kick)
+        if note.is_kick:
+            continue
+        
+        # Calculate time since hit
+        time_since_hit = current_time - note.hit_time
+        
+        # Only show circles during hit window
+        if 0 <= time_since_hit <= hit_window:
+            # Progress: 0.0 at hit, 1.0 at end of window
+            progress = time_since_hit / hit_window
+            
+            # Circle expands quickly then slows down (ease-out quadratic)
+            radius = max_circle_size * (1.0 - (1.0 - progress) ** 2)
+            
+            # Brightness fades out (quadratic for faster fade)
+            brightness = (1.0 - progress) ** 2
+            
+            # Skip if too dim to see
+            if brightness < 0.05:
+                continue
+            
+            # Position at strike line, centered on note X position
+            circles.append({
+                'x': note.x,
+                'y': strike_line_y,
+                'radius': radius,
+                'color': note.color,
+                'brightness': brightness * 0.8  # Slightly transparent
+            })
+    
+    return circles

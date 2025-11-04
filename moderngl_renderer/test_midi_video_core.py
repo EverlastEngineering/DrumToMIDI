@@ -47,7 +47,7 @@ class TestStrikeEffect:
         assert brightness > 0.0  # Brighter
         
         # Check actual values match spec
-        assert scale == pytest.approx(1.3, abs=0.01)
+        assert scale == pytest.approx(1.7, abs=0.01)  # 1.0 + 0.7 = 1.7
         assert flash > 1.0  # Can exceed 1.0 for strong flash
         assert brightness == pytest.approx(0.7, abs=0.01)
     

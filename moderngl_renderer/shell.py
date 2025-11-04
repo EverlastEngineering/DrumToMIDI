@@ -267,9 +267,12 @@ out vec3 v_color;
 out vec2 v_local_pos;     // Position within circle (-1 to 1)
 out float v_brightness;
 
+uniform float u_aspect_ratio;  // width / height
+
 void main() {
-    // Scale unit circle by radius and translate to position
-    vec2 pos = in_circle.xy + in_position * in_circle.z;
+    // Scale unit circle by radius, adjusting X for aspect ratio to maintain circular shape
+    vec2 scale = vec2(in_circle.z / u_aspect_ratio, in_circle.z);
+    vec2 pos = in_circle.xy + in_position * scale;
     gl_Position = vec4(pos, 0.0, 1.0);
     
     v_color = in_color;
@@ -440,6 +443,8 @@ class ModernGLContext:
             vertex_shader=CIRCLE_VERTEX_SHADER,
             fragment_shader=CIRCLE_FRAGMENT_SHADER
         )
+        # Set aspect ratio uniform for circular rendering
+        self.circle_prog['u_aspect_ratio'].value = width / height
         
         # Create unit circle vertices (triangle fan approximation)
         # Using 32 segments for smooth circles

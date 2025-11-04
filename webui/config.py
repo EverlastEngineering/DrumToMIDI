@@ -16,8 +16,8 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
     # Application settings
-    APP_NAME = 'LarsNet MIDI'
-    APP_VERSION = '0.1.0'
+    APP_NAME = 'DrumToMIDI'
+    APP_VERSION = '1.0.0'
     
     # File upload settings
     MAX_CONTENT_LENGTH = 500 * 1024 * 1024  # 500MB max file size

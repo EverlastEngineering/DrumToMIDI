@@ -66,7 +66,7 @@ kick:
   # Statistical outlier filtering (optional second-pass filter)
   # Detects snare bleed by comparing FundE/BodyE ratio and total energy
   # against the median values across all detected kicks
-  enable_statistical_filter: true    # Enable/disable statistical outlier detection
+  enable_statistical_filter: false    # Enable/disable statistical outlier detection
   statistical_badness_threshold: 0.3  # Badness score threshold (0-1)
                                       # Higher = more permissive (0.6-0.7 recommended)
                                       # Lower = stricter filtering (0.4-0.5 very strict)
@@ -182,17 +182,28 @@ cymbals:
   timing_offset: 0.0         # Timing offset in seconds (0 = no offset)
   
   # Sustain analysis and decay pattern detection
-  sustain_window_sec: 0.2    # Window size for sustain analysis AND decay pattern analysis (seconds)
-                              # Cymbals need longer window than default (0.2s) to measure full decay
-                              # Used to analyze spectral energy decay pattern: onsets within this window
-                              # are filtered if they occur during exponential decay (not independent hits)
+  sustain_analysis_window_sec: 2.0  # Window size for measuring cymbal sustain duration (seconds)
+                              # How long to analyze audio to detect full cymbal ring-out
+                              # Longer = more accurate sustain measurement, typical: 2-3 seconds
+  decay_filter_window_sec: 0.5  # Window size for decay pattern retriggering filter (seconds)
+                              # How far back to check for overlapping cymbal decays
+                              # Shorter = allows faster repeated hits, typical: 0.3-0.5 seconds
   
-  # Spectral filtering
+  # Spectral filtering (filters artifacts and bleed using frequency analysis)
+  enable_spectral_filter: true  # Enable/disable spectral filtering entirely. Set to false to keep ALL detected onsets
+  min_strength_threshold: 0.1  # Minimum onset strength (0-1). Set to 0.0 to disable, increase to filter weak detections
   geomean_threshold: 100      # Geometric mean of body (1-4kHz) + brilliance (4-10kHz) energy
                               # Real cymbals: 50-500, Artifacts: 5-20
+                              # Set lower (30-50) for more permissive, higher (100-200) for stricter
   min_sustain_ms: 150        # Minimum sustain duration in milliseconds
                               # Real cymbal hits sustain longer than clicks/artifacts
                               # Typical values: 100-200ms
+  
+  # Spectral ranges for analysis (Hz)
+  body_freq_min: 1000        # Start of body/wash range (fundamental cymbal tone)
+  body_freq_max: 4000        # End of body range
+  brilliance_freq_min: 4000  # Start of brilliance/attack range (bright shimmer)
+  brilliance_freq_max: 10000 # End of brilliance range
   
   # MIDI note duration
   max_note_duration: 2.0     # Maximum MIDI note duration in seconds

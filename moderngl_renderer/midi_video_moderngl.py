@@ -173,7 +173,7 @@ def render_midi_to_video_moderngl(
     # Output settings - Use VideoToolbox hardware encoder on macOS
     ffmpeg_cmd.extend([
         '-c:v', 'h264_videotoolbox',
-        '-b:v', '2M',  # 2 Mbps bitrate (high quality)
+        '-b:v', '1M',  # 2 Mbps bitrate (high quality)
         '-pix_fmt', 'yuv420p'
     ])
     

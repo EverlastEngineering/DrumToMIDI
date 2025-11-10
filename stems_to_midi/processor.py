@@ -437,8 +437,18 @@ def process_stem_to_midi(
     # This uses the functional core for all calculations
     show_all_onsets = config.get('debug', {}).get('show_all_onsets', False)
     show_spectral_data = config.get('debug', {}).get('show_spectral_data', False)
+    
+    # Check if spectral filtering is enabled for this stem
+    stem_config = config.get(stem_type, {})
+    enable_spectral_filter = stem_config.get('enable_spectral_filter', True)
+    
+    # Initialize variables that may be used later (in case filtering is disabled)
+    stem_geomeans = None
+    hihat_sustain_durations = None
+    hihat_spectral_data = None
+    cymbal_sustain_durations = None
 
-    if stem_type in ['snare', 'kick', 'toms', 'hihat', 'cymbals'] and len(onset_times) > 0:
+    if stem_type in ['snare', 'kick', 'toms', 'hihat', 'cymbals'] and len(onset_times) > 0 and enable_spectral_filter:
         # Use functional core helper for filtering
         filter_result = filter_onsets_by_spectral(
             onset_times,
@@ -589,6 +599,45 @@ def process_stem_to_midi(
 
             num_rejected = len(all_onset_data) - len(onset_times)
             print(f"\n    After spectral filtering: {len(onset_times)} hits (rejected {num_rejected} artifacts)")
+        
+        # Show decay analysis for cymbals if enabled and debug is on
+        decay_analysis = filter_result.get('decay_analysis')
+        if decay_analysis is not None and (show_all_onsets or show_spectral_data):
+            decay_data = decay_analysis['data']
+            window_sec = decay_analysis['window_sec']
+            
+            print(f"\n      DECAY PATTERN ANALYSIS (Pass 2 - Retriggering Filter):")
+            print(f"      Checks if onset occurs during decay of previous hit")
+            print(f"      Window: {window_sec}s, DecayRate=avg energy change (negative=decaying)")
+            print(f"\n      {'Time':>8s} {'PrevHit':>8s} {'TimeDiff':>9s} {'DecayRate':>10s} {'Decaying':>9s} {'OwnDecay':>10s} {'Status':>10s}")
+            
+            for entry in decay_data:
+                time = entry['time']
+                prev_time = entry['prev_hit_time']
+                time_diff = entry['time_since_prev']
+                prev_decay_rate = entry['prev_decay_rate']
+                prev_is_decaying = entry['prev_is_decaying']
+                own_decay_rate = entry.get('own_decay_rate')
+                is_retrigger = entry['is_retrigger']
+                
+                # Format output
+                prev_str = f"{prev_time:.3f}" if prev_time is not None else "N/A"
+                diff_str = f"{time_diff*1000:.1f}ms" if time_diff is not None else "N/A"
+                decay_str = f"{prev_decay_rate:.3f}" if prev_decay_rate is not None else "N/A"
+                decaying_str = "YES" if prev_is_decaying else ("NO" if prev_is_decaying is not None else "N/A")
+                own_decay_str = f"{own_decay_rate:.3f}" if own_decay_rate is not None else "N/A"
+                status = "REJECTED" if is_retrigger else "KEPT"
+                
+                print(f"      {time:8.3f} {prev_str:>8s} {diff_str:>9s} {decay_str:>10s} {decaying_str:>9s} {own_decay_str:>10s} {status:>10s}")
+            
+            # Show summary
+            kept_count = sum(1 for e in decay_data if not e['is_retrigger'])
+            rejected_count = sum(1 for e in decay_data if e['is_retrigger'])
+            print(f"\n      DECAY FILTER SUMMARY:")
+            print(f"        Decay window: {window_sec}s (adjustable via decay_filter_window_sec)")
+            print(f"        Onsets after Pass 1: {len(decay_data)}")
+            print(f"        Pass 2 Kept (independent hits): {kept_count}")
+            print(f"        Pass 2 Rejected (retriggering): {rejected_count}")
     
     if len(onset_times) == 0:
         return []
@@ -647,5 +696,7 @@ def process_stem_to_midi(
         config,
         sustain_durations=sustain_durations_param
     )
+    
+    print(f"    Created {len(events)} MIDI events from {len(onset_times)} onsets")
     
     return events

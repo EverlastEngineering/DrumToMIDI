@@ -324,11 +324,10 @@ def get_spectral_config_for_stem(stem_type: str, config: Dict) -> Dict:
         }
     
     elif stem_type == 'cymbals':
-        # Cymbals use hardcoded ranges (to be moved to config later)
         return {
             'freq_ranges': {
-                'primary': (1000, 4000),
-                'secondary': (4000, 10000)
+                'primary': (stem_config.get('body_freq_min', 1000), stem_config.get('body_freq_max', 4000)),
+                'secondary': (stem_config.get('brilliance_freq_min', 4000), stem_config.get('brilliance_freq_max', 10000))
             },
             'energy_labels': {
                 'primary': 'BodyE',
@@ -797,67 +796,103 @@ def filter_onsets_by_spectral(
     # Cymbals can have energy modulation during sustain that looks like new onsets
     # Analyze spectral decay pattern to distinguish true hits from decay artifacts
     if stem_type == 'cymbals' and not learning_mode and len(filtered_times) > 1:
-        # Get sustain window for cymbals
+        # Get decay filter window for cymbals (separate from sustain analysis window)
         cymbal_config = config.get('cymbals', {})
-        sustain_window_sec = cymbal_config.get('sustain_window_sec', 2.0)
+        enable_decay_filter = cymbal_config.get('enable_decay_filter', True)
         
-        # Build list of times to keep
-        final_times = []
-        final_strengths = []
-        final_amplitudes = []
-        final_geomeans = []
-        final_sustains = []
-        
-        # Track active decay zones (onset_time -> decay pattern)
-        active_decays = {}
-        
-        for i in range(len(filtered_times)):
-            current_time = filtered_times[i]
-            current_sample = int(current_time * sr)
+        if not enable_decay_filter:
+            # Skip decay filtering if disabled
+            pass
+        else:
+            decay_filter_window_sec = cymbal_config.get('decay_filter_window_sec', 0.5)
             
-            # Check if this onset falls within any active decay zone
-            is_retrigger = False
-            for prev_time, decay_info in active_decays.items():
-                time_diff = current_time - prev_time
-                
-                # If within decay window
-                if 0 < time_diff < sustain_window_sec:
-                    # Check if we're in a decaying region
-                    if decay_info['is_decaying']:
-                        is_retrigger = True
-                        break
+            # Build list of times to keep
+            final_times = []
+            final_strengths = []
+            final_amplitudes = []
+            final_geomeans = []
+            final_sustains = []
             
-            if not is_retrigger:
-                # This is a legitimate hit - keep it
-                final_times.append(filtered_times[i])
-                final_strengths.append(filtered_strengths[i])
-                final_amplitudes.append(filtered_amplitudes[i])
-                final_geomeans.append(filtered_geomeans[i])
-                if i < len(filtered_sustains):
-                    final_sustains.append(filtered_sustains[i])
+            # Track all decay analysis for debug output
+            decay_analysis_data = []
+            
+            # Track active decay zones (onset_time -> decay pattern)
+            active_decays = {}
+            
+            for i in range(len(filtered_times)):
+                current_time = filtered_times[i]
+                current_sample = int(current_time * sr)
                 
-                # Analyze decay pattern starting from this onset
-                decay_pattern = analyze_cymbal_decay_pattern(
-                    audio, current_sample, sr, 
-                    window_sec=sustain_window_sec,
-                    num_windows=8
-                )
+                # Check if this onset falls within any active decay zone
+                is_retrigger = False
+                prev_hit_time = None
+                prev_decay_rate = None
+                prev_is_decaying = None
+                time_since_prev = None
                 
-                # Store for checking subsequent onsets
-                active_decays[current_time] = decay_pattern
+                for prev_time, decay_info in active_decays.items():
+                    time_diff = current_time - prev_time
+                    
+                    # If within decay window
+                    if 0 < time_diff < decay_filter_window_sec:
+                        # Check if we're in a decaying region
+                        if decay_info['is_decaying']:
+                            is_retrigger = True
+                            prev_hit_time = prev_time
+                            prev_decay_rate = decay_info['decay_rate']
+                            prev_is_decaying = decay_info['is_decaying']
+                            time_since_prev = time_diff
+                            break
                 
-                # Clean up old decays outside the window
-                active_decays = {
-                    t: info for t, info in active_decays.items()
-                    if current_time - t < sustain_window_sec
+                # Store analysis data
+                analysis_entry = {
+                    'time': current_time,
+                    'is_retrigger': is_retrigger,
+                    'prev_hit_time': prev_hit_time,
+                    'time_since_prev': time_since_prev,
+                    'prev_decay_rate': prev_decay_rate,
+                    'prev_is_decaying': prev_is_decaying,
+                    'geomean': filtered_geomeans[i],
+                    'sustain_ms': filtered_sustains[i] if i < len(filtered_sustains) else None
                 }
-        
-        # Update filtered arrays
-        filtered_times = final_times
-        filtered_strengths = final_strengths
-        filtered_amplitudes = final_amplitudes
-        filtered_geomeans = final_geomeans
-        filtered_sustains = final_sustains
+                
+                if not is_retrigger:
+                    # This is a legitimate hit - keep it
+                    final_times.append(filtered_times[i])
+                    final_strengths.append(filtered_strengths[i])
+                    final_amplitudes.append(filtered_amplitudes[i])
+                    final_geomeans.append(filtered_geomeans[i])
+                    if i < len(filtered_sustains):
+                        final_sustains.append(filtered_sustains[i])
+                    
+                    # Analyze decay pattern starting from this onset
+                    decay_pattern = analyze_cymbal_decay_pattern(
+                        audio, current_sample, sr, 
+                        window_sec=decay_filter_window_sec,
+                        num_windows=8
+                    )
+                    
+                    # Store decay pattern info in analysis entry
+                    analysis_entry['own_decay_rate'] = decay_pattern['decay_rate']
+                    analysis_entry['own_is_decaying'] = decay_pattern['is_decaying']
+                    
+                    # Store for checking subsequent onsets
+                    active_decays[current_time] = decay_pattern
+                    
+                    # Clean up old decays outside the window
+                    active_decays = {
+                        t: info for t, info in active_decays.items()
+                        if current_time - t < decay_filter_window_sec
+                    }
+                
+                decay_analysis_data.append(analysis_entry)
+            
+            # Update filtered arrays
+            filtered_times = final_times
+            filtered_strengths = final_strengths
+            filtered_amplitudes = final_amplitudes
+            filtered_geomeans = final_geomeans
+            filtered_sustains = final_sustains
     
     # THIRD PASS: Statistical outlier detection (kick only, if enabled)
     # This catches snare bleed that passes geomean threshold but has abnormal FundE/BodyE ratio
@@ -916,6 +951,14 @@ def filter_onsets_by_spectral(
             spectral_config['statistical_enabled'] = True
             spectral_config['badness_threshold'] = badness_threshold
     
+    # Prepare decay analysis data for return (only for cymbals with decay filter enabled)
+    decay_analysis = None
+    if stem_type == 'cymbals' and 'decay_analysis_data' in locals():
+        decay_analysis = {
+            'data': decay_analysis_data,
+            'window_sec': decay_filter_window_sec
+        }
+    
     return {
         'filtered_times': np.array(filtered_times),
         'filtered_strengths': np.array(filtered_strengths),
@@ -924,7 +967,8 @@ def filter_onsets_by_spectral(
         'filtered_sustains': filtered_sustains,
         'filtered_spectral': filtered_spectral,
         'all_onset_data': all_onset_data,
-        'spectral_config': spectral_config
+        'spectral_config': spectral_config,
+        'decay_analysis': decay_analysis
     }
 
 
@@ -1290,18 +1334,18 @@ def analyze_onset_spectral(
     # Calculate sustain duration if needed
     sustain_ms = None
     if stem_type in ['hihat', 'cymbals']:
-        # Get stem-specific sustain window, fallback to global
+        # Get stem-specific sustain analysis window, fallback to global
         stem_config = config.get(stem_type, {})
-        sustain_window_sec = stem_config.get('sustain_window_sec')
-        if sustain_window_sec is None:
-            sustain_window_sec = config.get('audio', {}).get('sustain_window_sec', 0.2)
+        sustain_analysis_window_sec = stem_config.get('sustain_analysis_window_sec')
+        if sustain_analysis_window_sec is None:
+            sustain_analysis_window_sec = config.get('audio', {}).get('sustain_window_sec', 0.2)
         
         envelope_threshold = config.get('audio', {}).get('envelope_threshold', 0.1)
         smooth_kernel = config.get('audio', {}).get('envelope_smooth_kernel', 51)
         
         sustain_ms = calculate_sustain_duration(
             audio, onset_sample, sr,
-            window_ms=sustain_window_sec * 1000,
+            window_ms=sustain_analysis_window_sec * 1000,
             envelope_threshold=envelope_threshold,
             smooth_kernel=smooth_kernel
         )

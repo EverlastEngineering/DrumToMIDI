@@ -119,6 +119,28 @@ For deeper details on each part of the pipeline, see:
 - [Archived Features: Bayesian Optimization Toolkit](ARCHIVED_FEATURES.md)
 - [Dependency & environment notes](DEPENDENCIES.md)
 
+## Development Scripts
+
+For contributors, several convenience scripts are available:
+
+```bash
+# Configure your conda environment (optional - defaults to larsnet-midi)
+cp .env.example .env
+# Edit .env to set CONDA_ENV=your-env-name
+
+# Run tests with coverage report
+./test_coverage.sh
+
+# Run tests quickly (no coverage)
+./run_tests.sh
+
+# Run linter
+./lint.sh
+
+# Start web UI development server
+./start_webui.sh
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.

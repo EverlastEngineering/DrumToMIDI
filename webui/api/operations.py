@@ -65,7 +65,6 @@ def run_stems_to_midi(project_number: int, **kwargs):
     """
     # Import from stems_to_midi_cli.py file using importlib
     import importlib.util
-    import sys
     from pathlib import Path
     
     # Load stems_to_midi_cli.py explicitly

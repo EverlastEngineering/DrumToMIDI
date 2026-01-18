@@ -24,7 +24,6 @@ from stems_to_midi.detection import detect_onsets, detect_hihat_state
 from stems_to_midi.helpers import (
     ensure_mono,
     calculate_peak_amplitude,
-    get_spectral_config_for_stem,
     filter_onsets_by_spectral,
     should_keep_onset
 )
@@ -265,12 +264,12 @@ def extract_features_from_stem(project_number: int, stem_type: str, output_dir: 
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path(__file__).parent.parent.parent)
     
     if result.returncode != 0:
-        print(f"Warning: MIDI generation failed:")
+        print("Warning: MIDI generation failed:")
         print(result.stderr)
         print("Continuing with CSV export only...")
         return output_csv
     
-    print(f"  MIDI generation complete")
+    print("  MIDI generation complete")
     
     # Find the MIDI file (might be named with or without stem type)
     midi_files = list(midi_dir.glob("*.mid"))
@@ -360,7 +359,7 @@ def extract_features_from_stem(project_number: int, stem_type: str, output_dir: 
     print(f"  Matched to MIDI notes: {detected_count}")
     print(f"  Not in MIDI: {len(df) - detected_count}")
     print()
-    print(f"Next step: Label ground truth")
+    print("Next step: Label ground truth")
     print(f"  1. Open {stem_path} in your DAW")
     print(f"  2. Note timestamps of actual {stem_type} hits")
     print(f"  3. Run: python -m stems_to_midi.optimization.label {project_number} --stem {stem_type}")

@@ -98,7 +98,7 @@ def benchmark_original(audio_path: str, overlap: int = 8, device: str = "cpu"):
     std_time = np.std(times)
     rtf = avg_time / duration
     
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Average time: {avg_time:.2f} ± {std_time:.2f} seconds")
     print(f"  Real-time factor: {rtf:.2f}x")
     
@@ -142,7 +142,7 @@ def benchmark_optimized(
     print(f"Batch size: {batch_size}")
     print(f"Device: {device}")
     if device == "cuda" or device == "mps":
-        print(f"Mixed precision: Enabled (fp16)")
+        print("Mixed precision: Enabled (fp16)")
     
     # Warm-up run (important for MPS to pre-compile kernels)
     print("\nWarm-up run...")
@@ -189,7 +189,7 @@ def benchmark_optimized(
     std_time = np.std(times)
     rtf = avg_time / duration
     
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Average time: {avg_time:.2f} ± {std_time:.2f} seconds")
     print(f"  Real-time factor: {rtf:.2f}x")
     
@@ -361,7 +361,7 @@ def main():
         
         speedup = result_original["avg_time"] / result_optimized["avg_time"]
         
-        print(f"Original implementation:")
+        print("Original implementation:")
         print(f"  Time: {result_original['avg_time']:.2f}s (RTF: {result_original['rtf']:.2f}x)")
         
         print(f"\nOptimized implementation (batch_size={args.batch_size}):")

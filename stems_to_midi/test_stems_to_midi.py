@@ -6,7 +6,6 @@ Run with: pytest test_stems_to_midi.py -v
 
 import pytest
 import numpy as np
-import yaml
 from pathlib import Path
 import tempfile
 import soundfile as sf
@@ -14,7 +13,6 @@ from stems_to_midi.config import load_config, DrumMapping
 from stems_to_midi.detection import (
     detect_onsets,
     estimate_velocity,
-    detect_tom_pitch,
     classify_tom_pitch,
     detect_hihat_state
 )

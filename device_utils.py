@@ -199,7 +199,7 @@ def print_device_info(device: Optional[str] = None):
     info = get_device_info(device)
     
     print(f"\n{'='*60}")
-    print(f"Device Information")
+    print("Device Information")
     print(f"{'='*60}")
     print(f"Device: {info['device']}")
     print(f"Type: {info['type']}")
@@ -207,7 +207,7 @@ def print_device_info(device: Optional[str] = None):
     if info['name']:
         print(f"Name: {info['name']}")
     if info['properties']:
-        print(f"Properties:")
+        print("Properties:")
         for key, value in info['properties'].items():
             print(f"  - {key}: {value}")
     print(f"{'='*60}\n")

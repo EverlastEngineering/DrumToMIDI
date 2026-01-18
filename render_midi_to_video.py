@@ -16,19 +16,17 @@ Usage:
 
 import argparse
 import platform
-import mido # type: ignore
 import cv2 # type: ignore
 import numpy as np # type: ignore
-from PIL import Image, ImageDraw, ImageFont, ImageFilter # type: ignore
-from typing import List, Tuple, Dict, Optional
+from PIL import Image, ImageDraw, ImageFont # type: ignore
+from typing import List, Tuple, Optional
 import os
 import sys
 import subprocess
-import shutil
 from pathlib import Path
 
 # Import MIDI types and parser
-from midi_types import DrumNote, DrumMapping, STANDARD_GM_DRUM_MAP
+from midi_types import DrumNote, STANDARD_GM_DRUM_MAP
 from midi_parser import parse_midi_file
 from midi_render_core import (
     calculate_note_alpha,
@@ -36,7 +34,6 @@ from midi_render_core import (
     apply_brightness_to_color,
     get_brighter_outline_color,
     calculate_note_y_position,
-    calculate_highlight_zone,
     is_note_in_highlight_zone,
     calculate_strike_progress,
     calculate_lookahead_time,
@@ -51,7 +48,6 @@ from midi_render_core import (
 
 # Import project manager
 from project_manager import (
-    discover_projects,
     select_project,
     get_project_by_number,
     update_project_metadata,
@@ -656,7 +652,7 @@ class MidiVideoRenderer:
             show_preview: Show live preview window
             audio_path: Optional path to audio file to include in video
         """
-        print(f"Status Update: Rendering Video")
+        print("Status Update: Rendering Video")
         print(f"Parsing MIDI file: {midi_path}")
         notes, total_duration = self.parse_midi(midi_path)
         print(f"Found {len(notes)} notes, duration: {total_duration:.2f}s")
@@ -674,7 +670,7 @@ class MidiVideoRenderer:
             self.note_width = self.width // self.num_lanes
             print(f"Filtered lanes: using {self.num_lanes} of {original_num_lanes} lanes")
         elif num_used_lanes == 0:
-            print(f"Warning: No regular lane notes found (only kick drum or empty MIDI)")
+            print("Warning: No regular lane notes found (only kick drum or empty MIDI)")
             # Set to 1 lane minimum to avoid division by zero
             self.num_lanes = 1
             self.note_width = self.width
@@ -721,10 +717,10 @@ class MidiVideoRenderer:
         ffmpeg_cmd.extend(['-movflags', '+faststart', output_path])
         
         print(f"\n{'='*60}")
-        print(f"Starting FFmpeg encoder for H.264 output...")
+        print("Starting FFmpeg encoder for H.264 output...")
         print(f"DEBUG: Output file: {output_path}")
         print(f"DEBUG: Video: {self.width}x{self.height} @ {self.fps}fps, {total_frames} frames, {total_duration:.2f}s")
-        print(f"DEBUG: Using +faststart flag to optimize for streaming")
+        print("DEBUG: Using +faststart flag to optimize for streaming")
         print(f"{'='*60}\n")
         
         try:
@@ -868,7 +864,7 @@ class MidiVideoRenderer:
             except BrokenPipeError as e:
                 print(f"\n⚠️  DEBUG: FFmpeg pipe broken at frame {frame_num}/{total_frames} ({(frame_num/total_frames)*100:.1f}%)")
                 print(f"⚠️  DEBUG: Error: {e}")
-                print(f"⚠️  DEBUG: FFmpeg may have crashed or terminated early")
+                print("⚠️  DEBUG: FFmpeg may have crashed or terminated early")
                 # Check if FFmpeg process is still alive
                 if ffmpeg_process.poll() is not None:
                     print(f"⚠️  DEBUG: FFmpeg process has terminated (return code: {ffmpeg_process.returncode})")
@@ -893,29 +889,29 @@ class MidiVideoRenderer:
                 print(f"Progress: {progress:.1f}%")
         
         # Final progress update
-        print(f"Progress: 100.0% - All frames processed")
+        print("Progress: 100.0% - All frames processed")
         
         # Close FFmpeg stdin and wait for completion
         print(f"\n{'='*60}")
-        print(f"DEBUG: Finalizing video encoding...")
+        print("DEBUG: Finalizing video encoding...")
         print(f"{'='*60}")
-        print(f"DEBUG: Closing FFmpeg stdin pipe...")
+        print("DEBUG: Closing FFmpeg stdin pipe...")
         
         try:
             ffmpeg_process.stdin.close()
-            print(f"DEBUG: FFmpeg stdin closed successfully")
+            print("DEBUG: FFmpeg stdin closed successfully")
         except Exception as e:
             print(f"⚠️  DEBUG: Error closing FFmpeg stdin: {e}")
         
-        print(f"DEBUG: Waiting for FFmpeg to complete encoding...")
-        print(f"DEBUG: This includes writing moov atom for streaming (faststart)...")
+        print("DEBUG: Waiting for FFmpeg to complete encoding...")
+        print("DEBUG: This includes writing moov atom for streaming (faststart)...")
         
         try:
             ffmpeg_process.wait(timeout=60)  # 60 second timeout for finalization
             print(f"DEBUG: FFmpeg process completed (return code: {ffmpeg_process.returncode})")
         except subprocess.TimeoutExpired:
-            print(f"⚠️  DEBUG: FFmpeg finalization timed out after 60 seconds!")
-            print(f"⚠️  DEBUG: Forcing termination...")
+            print("⚠️  DEBUG: FFmpeg finalization timed out after 60 seconds!")
+            print("⚠️  DEBUG: Forcing termination...")
             ffmpeg_process.kill()
             ffmpeg_process.wait()
             print(f"⚠️  DEBUG: Process terminated (return code: {ffmpeg_process.returncode})")
@@ -924,16 +920,15 @@ class MidiVideoRenderer:
             cv2.destroyAllWindows()
         
         # Explicitly close stderr to release file handle
-        print(f"DEBUG: Closing FFmpeg stderr pipe...")
+        print("DEBUG: Closing FFmpeg stderr pipe...")
         try:
             if ffmpeg_process.stderr:
                 ffmpeg_process.stderr.close()
-                print(f"DEBUG: FFmpeg stderr closed successfully")
+                print("DEBUG: FFmpeg stderr closed successfully")
         except Exception as e:
             print(f"⚠️  DEBUG: Error closing FFmpeg stderr: {e}")
         
         # Check file integrity
-        import os
         if os.path.exists(output_path):
             file_size = os.path.getsize(output_path)
             print(f"DEBUG: Output file exists: {output_path}")
@@ -941,14 +936,14 @@ class MidiVideoRenderer:
             
             # Check if file is likely valid (has minimum size)
             if file_size < 1024:  # Less than 1 KB is definitely corrupt
-                print(f"⚠️  DEBUG: File size is suspiciously small - likely corrupted!")
+                print("⚠️  DEBUG: File size is suspiciously small - likely corrupted!")
             
             # Ensure file handle is released by explicitly flushing any OS buffers
-            print(f"DEBUG: Ensuring file handle is released...")
+            print("DEBUG: Ensuring file handle is released...")
             try:
                 # Force a sync to ensure all OS buffers are flushed
                 subprocess.run(['sync'], check=False)
-                print(f"DEBUG: File system sync completed")
+                print("DEBUG: File system sync completed")
             except Exception as e:
                 print(f"⚠️  DEBUG: Error syncing filesystem: {e}")
         else:
@@ -958,18 +953,18 @@ class MidiVideoRenderer:
             print(f"\n{'='*60}")
             print(f"✅ Video saved to: {output_path}")
             if audio_path:
-                print(f"   Encoded with H.264 video codec and AAC audio codec")
+                print("   Encoded with H.264 video codec and AAC audio codec")
             else:
-                print(f"   Encoded with H.264 video codec (no audio)")
-            print(f"   Optimized for web streaming (moov atom relocated)")
-            print(f"   Note: If video player shows old version, hard refresh browser (Cmd+Shift+R / Ctrl+Shift+R)")
+                print("   Encoded with H.264 video codec (no audio)")
+            print("   Optimized for web streaming (moov atom relocated)")
+            print("   Note: If video player shows old version, hard refresh browser (Cmd+Shift+R / Ctrl+Shift+R)")
             print(f"{'='*60}\n")
         else:
             print(f"\n{'='*60}")
             stderr_output = ffmpeg_process.stderr.read().decode('utf-8') if ffmpeg_process.stderr else ''
             print(f"⚠️  FFmpeg encoding failed with return code {ffmpeg_process.returncode}")
             if stderr_output:
-                print(f"   Error details (last 500 chars):")
+                print("   Error details (last 500 chars):")
                 print(f"   {stderr_output[-500:]}")
             print(f"{'='*60}\n")
 
@@ -1018,7 +1013,7 @@ def render_project_video(
         # Find MIDI files in project/midi/ directory
         midi_dir = project_dir / "midi"
         if not midi_dir.exists():
-            print(f"ERROR: No midi/ directory found in project.")
+            print("ERROR: No midi/ directory found in project.")
             print("Run stems_to_midi.py first!")
             sys.exit(1)
         
@@ -1075,7 +1070,7 @@ def render_project_video(
         print(f"\n{'='*60}")
         print(f"Rendering Video - Project {project['number']}: {project['name']}")
         print(f"{'='*60}\n")
-        print(f"Using ModernGL GPU renderer (fast mode)")
+        print("Using ModernGL GPU renderer (fast mode)")
         
         # Render with ModernGL
         render_midi_to_video_moderngl(
@@ -1100,9 +1095,9 @@ def render_project_video(
             }
         })
         
-        print(f"Status Update: Video rendering complete")
+        print("Status Update: Video rendering complete")
         print(f"  Video saved to: {output_file}")
-        print(f"  Project status updated\n")
+        print("  Project status updated\n")
         return
     
     # Otherwise use legacy PIL/OpenCV renderer
@@ -1114,7 +1109,7 @@ def render_project_video(
     # Find MIDI files in project/midi/ directory
     midi_dir = project_dir / "midi"
     if not midi_dir.exists():
-        print(f"ERROR: No midi/ directory found in project.")
+        print("ERROR: No midi/ directory found in project.")
         print("Run stems_to_midi.py first!")
         sys.exit(1)
     
@@ -1195,9 +1190,9 @@ def render_project_video(
         }
     })
     
-    print(f"Status Update: Video rendering complete")
+    print("Status Update: Video rendering complete")
     print(f"  Video saved to: {output_file}")
-    print(f"  Project status updated\n")
+    print("  Project status updated\n")
 
 
 def main():

@@ -10,7 +10,6 @@ These tests use synthetic audio/stems to run quickly without ML models.
 import pytest
 import numpy as np
 import soundfile as sf
-import tempfile
 import shutil
 import json
 from pathlib import Path

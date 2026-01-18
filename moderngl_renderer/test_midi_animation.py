@@ -11,7 +11,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from midi_types import DrumNote, STANDARD_GM_DRUM_MAP
+from midi_types import DrumNote
 from moderngl_renderer.midi_animation import (
     calculate_lane_x_position,
     calculate_note_width,

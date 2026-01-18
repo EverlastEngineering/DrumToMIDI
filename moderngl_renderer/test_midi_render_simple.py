@@ -7,7 +7,6 @@ then renders a single frame using shell.py to verify integration.
 
 import sys
 from pathlib import Path
-import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -19,7 +18,6 @@ from moderngl_renderer.midi_animation import (
     calculate_note_y_at_time
 )
 from moderngl_renderer.shell import ModernGLContext, render_rectangles, read_framebuffer
-from moderngl_renderer.core import apply_brightness_to_color
 
 
 def midi_note_to_rectangle(anim_note, current_time, strike_line_y=-0.6):

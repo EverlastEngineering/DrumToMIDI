@@ -347,7 +347,7 @@ def stream_job_status(job_id):
             
             if job is None:
                 # Job was deleted
-                yield f'event: job_error\n'
+                yield 'event: job_error\n'
                 yield f'data: {json.dumps({"error": "Job no longer exists"})}\n\n'
                 break
             
@@ -390,7 +390,7 @@ def stream_job_status(job_id):
                     break
                 else:
                     # Progress update
-                    yield f'event: job_update\n'
+                    yield 'event: job_update\n'
                     yield f'data: {json.dumps(update_data)}\n\n'
             
             # Poll every 500ms

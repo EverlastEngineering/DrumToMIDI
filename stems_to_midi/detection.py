@@ -12,10 +12,9 @@ Architecture: Imperative Shell (Algorithm Coordinators)
 Note: This module contains coordinators, not pure functions. Pure functions are in helpers.
 """
 
-from typing import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict
 import numpy as np
 import librosa
-from scipy.signal import medfilt
 
 # Import functional core helpers
 from .helpers import (
@@ -27,7 +26,6 @@ from .helpers import (
 )
 
 # Import config
-from .config import DrumMapping
 
 
 __all__ = [
@@ -102,7 +100,7 @@ def detect_tom_pitch(
             # Take median to smooth out jitter
             pitch = np.median(f0[~np.isnan(f0)])
             return float(pitch) if not np.isnan(pitch) else 0.0
-    except Exception as e:
+    except Exception:
         # Fallback: use spectral peak as estimate
         fft = np.fft.rfft(segment)
         freqs = np.fft.rfftfreq(len(segment), 1/sr)

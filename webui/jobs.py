@@ -12,7 +12,6 @@ Architecture: Functional Core, Imperative Shell
 import uuid
 import threading
 import time
-import queue
 import sys
 import io
 from datetime import datetime

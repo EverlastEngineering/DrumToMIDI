@@ -6,9 +6,6 @@ Tests the REST API for reading, validating, and updating YAML configurations.
 
 import pytest
 import json
-from pathlib import Path
-import tempfile
-import shutil
 
 from webui.app import create_app
 

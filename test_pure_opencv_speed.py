@@ -12,7 +12,6 @@ import pytest
 from pathlib import Path
 from render_midi_to_video import (
     create_cv2_canvas,
-    cv2_draw_rounded_rectangle,
     cv2_draw_highlight_circle,
     MidiVideoRenderer
 )
@@ -42,7 +41,7 @@ def test_pure_opencv_rendering(project_id: int = 12, num_frames: int = 300):
     total_frames = min(num_frames, int(total_duration * renderer.fps))
     
     print(f"\n{'='*60}")
-    print(f"Pure OpenCV Rendering Speed Test")
+    print("Pure OpenCV Rendering Speed Test")
     print(f"{'='*60}")
     print(f"Project: {project_id}")
     print(f"Notes: {len(notes)}")
@@ -107,7 +106,7 @@ def test_pure_opencv_rendering(project_id: int = 12, num_frames: int = 300):
     avg_fps = total_frames / total_time
     
     print(f"\n{'='*60}")
-    print(f"Pure OpenCV Results")
+    print("Pure OpenCV Results")
     print(f"{'='*60}")
     print(f"Total time: {total_time:.2f}s")
     print(f"Average FPS: {avg_fps:.1f}")
@@ -134,7 +133,7 @@ def test_pure_pil_rendering(project_id: int = 12, num_frames: int = 300):
     total_frames = min(num_frames, int(total_duration * renderer.fps))
     
     print(f"\n{'='*60}")
-    print(f"Pure PIL Rendering Speed Test")
+    print("Pure PIL Rendering Speed Test")
     print(f"{'='*60}")
     print(f"Project: {project_id}")
     print(f"Frames to render: {total_frames}")
@@ -188,7 +187,7 @@ def test_pure_pil_rendering(project_id: int = 12, num_frames: int = 300):
     avg_fps = total_frames / total_time
     
     print(f"\n{'='*60}")
-    print(f"Pure PIL Results")
+    print("Pure PIL Results")
     print(f"{'='*60}")
     print(f"Total time: {total_time:.2f}s")
     print(f"Average FPS: {avg_fps:.1f}")
@@ -211,7 +210,7 @@ if __name__ == '__main__':
     
     # Compare
     print(f"\n{'='*60}")
-    print(f"COMPARISON (Pure Rendering Only)")
+    print("COMPARISON (Pure Rendering Only)")
     print(f"{'='*60}")
     print(f"PIL:    {pil_time:.2f}s ({pil_fps:.1f} fps)")
     print(f"OpenCV: {cv2_time:.2f}s ({cv2_fps:.1f} fps)")

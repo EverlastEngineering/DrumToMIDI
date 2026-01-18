@@ -5,7 +5,6 @@ This script tests all coordinate conversion functions with real values
 to verify they produce correct results.
 """
 
-import sys
 
 
 def test_pixel_to_norm_conversions():
@@ -52,12 +51,12 @@ def test_pixel_to_norm_conversions():
                 if abs(norm_y - 1.0) > 0.001:
                     print(f"  ❌ ERROR: Top should be +1.0, got {norm_y}")
                 else:
-                    print(f"  ✓ Correct: Top is +1.0")
+                    print("  ✓ Correct: Top is +1.0")
             elif pixel_y == height:
                 if abs(norm_y - (-1.0)) > 0.001:
                     print(f"  ❌ ERROR: Bottom should be -1.0, got {norm_y}")
                 else:
-                    print(f"  ✓ Correct: Bottom is -1.0")
+                    print("  ✓ Correct: Bottom is -1.0")
         
         print("\n--- NORMALIZED TO PIXEL Y CONVERSION (from shader) ---")
         
@@ -80,7 +79,7 @@ def test_pixel_to_norm_conversions():
                 if abs(pixel_y - 0) > 0.1:
                     print(f"  ❌ ERROR: +1.0 should be pixel 0 (top), got {pixel_y}")
                 else:
-                    print(f"  ✓ Correct: +1.0 is pixel 0 (top)")
+                    print("  ✓ Correct: +1.0 is pixel 0 (top)")
             elif abs(norm_y - (-1.0)) < 0.001:
                 if abs(pixel_y - height) > 0.1:
                     print(f"  ❌ ERROR: -1.0 should be pixel {height} (bottom), got {pixel_y}")
@@ -107,13 +106,13 @@ def test_pixel_to_norm_conversions():
         strike_line_y = int(height * 0.85)
         strike_line_y_norm = 1.0 - (strike_line_y / height) * 2.0
         
-        print(f"Strike line at 85% down:")
+        print("Strike line at 85% down:")
         print(f"  Pixel Y: {strike_line_y}")
         print(f"  Normalized Y: {strike_line_y_norm:+6.3f}")
-        print(f"  Expected: approximately -0.7")
+        print("  Expected: approximately -0.7")
         
         if abs(strike_line_y_norm - (-0.7)) < 0.05:
-            print(f"  ✓ Correct: Strike line is near -0.7")
+            print("  ✓ Correct: Strike line is near -0.7")
         else:
             print(f"  ❌ ERROR: Strike line should be near -0.7, got {strike_line_y_norm}")
         
@@ -155,17 +154,17 @@ def test_pixel_to_norm_conversions():
                 if y_pixels < strike_line_y:
                     print(f"     ✓ Note is ABOVE strike line (y_pixels < {strike_line_y})")
                 else:
-                    print(f"     ❌ ERROR: Note should be ABOVE strike line before hit")
+                    print("     ❌ ERROR: Note should be ABOVE strike line before hit")
             elif time_delta > 0:  # After hit
                 if y_pixels > strike_line_y:
                     print(f"     ✓ Note is BELOW strike line (y_pixels > {strike_line_y})")
                 else:
-                    print(f"     ❌ ERROR: Note should be BELOW strike line after hit")
+                    print("     ❌ ERROR: Note should be BELOW strike line after hit")
             else:
                 if abs(y_pixels - strike_line_y) < 1.0:
-                    print(f"     ✓ Note is AT strike line")
+                    print("     ✓ Note is AT strike line")
                 else:
-                    print(f"     ❌ ERROR: Note should be at strike line")
+                    print("     ❌ ERROR: Note should be at strike line")
 
 
 def test_x_axis_conversion():

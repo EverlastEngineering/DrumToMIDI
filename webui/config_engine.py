@@ -14,7 +14,7 @@ import re
 from dataclasses import dataclass
 from ruamel.yaml import YAML # type: ignore
 from ruamel.yaml.comments import CommentedMap # type: ignore
-from .config_schema import get_schema, validate_structure, get_dict_keys
+from .config_schema import get_schema, validate_structure
 
 
 @dataclass
@@ -44,7 +44,7 @@ class ValidationRule:
         
         if self.regex is not None:
             if not re.match(self.regex, str(value)):
-                return False, f"Value does not match required pattern"
+                return False, "Value does not match required pattern"
         
         if self.must_exist:
             if not Path(value).exists():

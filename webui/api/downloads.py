@@ -4,7 +4,7 @@ Downloads API Endpoints
 Provides file download endpoints for project outputs.
 """
 
-from flask import send_file, jsonify, abort # type: ignore
+from flask import send_file, jsonify # type: ignore
 from pathlib import Path
 import sys
 import zipfile

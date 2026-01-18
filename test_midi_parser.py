@@ -7,14 +7,12 @@ Tests the pure parsing functions without any rendering logic.
 import pytest
 from pathlib import Path
 from midi_parser import (
-    build_tempo_map,
     tempo_to_bpm,
-    extract_midi_notes,
     map_midi_to_drums,
     parse_midi_file,
     parse_midi_to_sequence
 )
-from midi_types import MidiNote, DrumNote
+from midi_types import MidiNote
 
 
 class TestTempoMap:

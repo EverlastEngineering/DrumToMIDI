@@ -15,7 +15,7 @@ Used by: render_midi_to_video.py (PIL/OpenCV), moderngl_renderer (future)
 """
 
 import math
-from typing import Tuple, Set, Dict, List, Any
+from typing import Tuple, Set, Dict, List
 from midi_types import DrumNote
 
 

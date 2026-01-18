@@ -5,7 +5,6 @@ Validates that OpenCV drawing functions produce visually similar output to PIL.
 """
 import pytest
 import numpy as np
-import cv2
 from PIL import Image, ImageDraw
 from render_midi_to_video import (
     create_cv2_canvas,

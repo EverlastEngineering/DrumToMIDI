@@ -11,7 +11,7 @@ import mido  # type: ignore
 from typing import List, Tuple
 from pathlib import Path
 
-from midi_types import MidiNote, DrumNote, MidiSequence, DrumMapDict
+from midi_types import DrumNote, MidiSequence, DrumMapDict
 from midi_core import (
     process_midi_data_to_drum_notes,
     process_midi_data_to_sequence

@@ -133,7 +133,7 @@ def main():
     print("\n" + "="*60)
     print(f"LarsNet Web UI v{app.config['APP_VERSION']}")
     print("="*60)
-    print(f"\nStarting server at http://0.0.0.0:4915")
+    print("\nStarting server at http://0.0.0.0:4915")
     print("\nPress Ctrl+C to stop\n")
     
     try:

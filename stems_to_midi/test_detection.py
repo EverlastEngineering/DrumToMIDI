@@ -6,7 +6,7 @@ These tests provide complete coverage of the detection algorithms.
 
 import pytest
 import numpy as np
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from stems_to_midi.detection import (
     detect_onsets,

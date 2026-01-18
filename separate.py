@@ -13,7 +13,6 @@ Usage:
 
 from separation_utils import process_stems_for_project
 from project_manager import (
-    discover_projects,
     find_loose_files,
     create_project,
     select_project,
@@ -89,9 +88,9 @@ def separate_project(
         }
     })
     
-    print(f"Status Update: Process complete!")
+    print("Status Update: Process complete!")
     print(f"  Stems saved to: {stems_dir}")
-    print(f"  Project status updated\n")
+    print("  Project status updated\n")
 
 
 if __name__ == '__main__':

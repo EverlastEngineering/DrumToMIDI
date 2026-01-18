@@ -13,7 +13,6 @@ import argparse
 import sys
 from pathlib import Path
 import pandas as pd
-import numpy as np
 from typing import Dict, Tuple
 
 # Add parent directory to path
@@ -182,10 +181,10 @@ def bayesian_optimize(df: pd.DataFrame, n_calls: int = 50) -> Dict:
         return -score  # Negative because skopt minimizes
     
     print("\nRunning Bayesian optimization...")
-    print(f"  Search space:")
-    print(f"    geomean_threshold: 1.0 - 30.0")
-    print(f"    open_geomean_min: 200.0 - 700.0")
-    print(f"    open_sustain_min: 100.0 - 180.0")
+    print("  Search space:")
+    print("    geomean_threshold: 1.0 - 30.0")
+    print("    open_geomean_min: 200.0 - 700.0")
+    print("    open_sustain_min: 100.0 - 180.0")
     print(f"  Number of evaluations: {n_calls}")
     print()
     
@@ -253,7 +252,7 @@ def main():
     
     df = load_labeled_data(csv_path)
     
-    print(f"\nLabeled data:")
+    print("\nLabeled data:")
     print(f"  Total labeled hits: {len(df)}")
     print(f"  Open hits: {df['is_open'].sum()}")
     print(f"  Closed hits: {df['is_closed'].sum()}")
@@ -266,11 +265,11 @@ def main():
     print("\n" + "="*60)
     print("OPTIMIZATION RESULTS")
     print("="*60)
-    print(f"\nBest parameters:")
+    print("\nBest parameters:")
     print(f"  geomean_threshold: {best_params['geomean_threshold']:.2f}")
     print(f"  open_geomean_min: {best_params['open_geomean_min']:.2f}")
     print(f"  open_sustain_min: {best_params['open_sustain_min']:.2f}")
-    print(f"\nPerformance:")
+    print("\nPerformance:")
     print(f"  Detection accuracy: {best_params['detection_accuracy']*100:.1f}%")
     print(f"  Classification accuracy: {best_params['classification_accuracy']*100:.1f}%")
     print(f"  Overall accuracy: {best_params['overall_accuracy']*100:.1f}%")
@@ -288,7 +287,7 @@ def main():
         f.write(f"geomean_threshold: {best_params['geomean_threshold']:.2f}\n")
         f.write(f"open_geomean_min: {best_params['open_geomean_min']:.2f}\n")
         f.write(f"open_sustain_min: {best_params['open_sustain_min']:.2f}\n")
-        f.write(f"\n# Performance\n")
+        f.write("\n# Performance\n")
         f.write(f"detection_accuracy: {best_params['detection_accuracy']*100:.1f}%\n")
         f.write(f"classification_accuracy: {best_params['classification_accuracy']*100:.1f}%\n")
         f.write(f"overall_accuracy: {best_params['overall_accuracy']*100:.1f}%\n")

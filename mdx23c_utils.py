@@ -10,7 +10,7 @@ The file also provides simple inference helpers that support:
 - ONNX runtimes (onnxruntime.InferenceSession)
 """
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union, Callable
+from typing import Any, Dict, Optional, Tuple, Union
 import logging
 import warnings
 

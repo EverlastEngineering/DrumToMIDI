@@ -9,7 +9,6 @@ They test observable behavior, not implementation details.
 """
 
 import pytest
-import numpy as np
 from pathlib import Path
 import tempfile
 import subprocess

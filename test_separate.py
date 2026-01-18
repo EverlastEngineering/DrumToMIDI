@@ -5,12 +5,8 @@ Tests the integration between separate.py and project_manager.
 """
 
 import pytest
-import tempfile
-import shutil
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 
-from project_manager import create_project, USER_FILES_DIR
+from project_manager import create_project
 
 
 class TestSeparateIntegration:

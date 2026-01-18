@@ -7,9 +7,7 @@ and that the API properly validates and saves updates.
 """
 
 import pytest
-import tempfile
 import json
-from pathlib import Path
 from webui.app import create_app
 from webui.config_engine import YAMLConfigEngine
 

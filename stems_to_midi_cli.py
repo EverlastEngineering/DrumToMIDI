@@ -17,18 +17,16 @@ Usage:
 
 from pathlib import Path
 import argparse
-from typing import Union, List
+from typing import List
 import sys
 
 # Import modules (thin orchestration layer)
-from stems_to_midi.config import load_config, DrumMapping
+from stems_to_midi.config import DrumMapping
 from stems_to_midi.midi import create_midi_file
-from stems_to_midi.learning import learn_threshold_from_midi, save_calibrated_config
 from stems_to_midi.processor import process_stem_to_midi
 
 # Import project manager
 from project_manager import (
-    discover_projects,
     select_project,
     get_project_by_number,
     get_project_config,
@@ -97,7 +95,7 @@ def stems_to_midi_for_project(
         stems_source = project_dir / "stems"
     
     if not stems_source.exists():
-        print(f"ERROR: No stems found in project. Run separate.py first.")
+        print("ERROR: No stems found in project. Run separate.py first.")
         sys.exit(1)
     
     print(f"Using stems from: {stems_source}")
@@ -135,9 +133,9 @@ def stems_to_midi_for_project(
         }
     })
     
-    print(f"Status Update: MIDI conversion complete!")
+    print("Status Update: MIDI conversion complete!")
     print(f"  MIDI files saved to: {midi_dir}")
-    print(f"  Project status updated\n")
+    print("  Project status updated\n")
 
 
 def _process_stems_to_midi(
@@ -193,7 +191,7 @@ def _process_stems_to_midi(
     if tempo is None:
         tempo = config['midi']['default_tempo']
     
-    print(f"Settings:")
+    print("Settings:")
     print(f"  Onset threshold: {onset_threshold}")
     print(f"  Onset delta: {onset_delta}")
     print(f"  Onset wait: {onset_wait}")
@@ -219,7 +217,7 @@ def _process_stems_to_midi(
                 break
     
     if not files_by_song:
-        print(f"No stem files found matching expected pattern (name-stemtype.wav)")
+        print("No stem files found matching expected pattern (name-stemtype.wav)")
         return
     
     total_songs = len(files_by_song)
@@ -299,7 +297,7 @@ def _process_stems_to_midi(
             else:
                 print(f"  Saved: {midi_path}\n")
         else:
-            print(f"  No events detected, skipping MIDI creation\n")
+            print("  No events detected, skipping MIDI creation\n")
 
 
 if __name__ == '__main__':

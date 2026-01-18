@@ -7,7 +7,7 @@ Pure functions only - no side effects, no GPU operations.
 This bridges between MIDI parsing (midi_shell.py) and GPU rendering (animation.py).
 """
 
-from typing import List, Dict, Tuple, Any
+from typing import List, Tuple, Any
 from dataclasses import dataclass
 
 

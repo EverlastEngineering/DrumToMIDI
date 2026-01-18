@@ -4,9 +4,7 @@ Tests for learning.py module - threshold learning from edited MIDI files.
 
 import pytest
 import numpy as np
-import tempfile
 import soundfile as sf
-from pathlib import Path
 from mido import MidiFile, MidiTrack, Message, MetaMessage
 import yaml
 

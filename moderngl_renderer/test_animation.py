@@ -7,7 +7,6 @@ No GPU operations - only animation math.
 """
 
 import pytest
-from typing import List, Dict
 
 
 class TestFrameGeneration:

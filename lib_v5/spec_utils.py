@@ -666,7 +666,7 @@ def adjust_leading_silence(target_audio, reference_audio, silence_threshold=0.01
         target_silence_end_p = (target_silence_end / 44100) * 1000
         silence_difference_p = ref_silence_end_p - target_silence_end_p
         print("silence_difference: ", silence_difference_p)
-    except Exception as e:
+    except Exception:
         pass
 
     if silence_difference > 0:  # Add silence to target_audio
@@ -1011,7 +1011,7 @@ def align_audio(file1,
     #print('Final: ', np.abs(wav_sub).mean())
     wav_sub = np.clip(wav_sub, -1, +1)
     
-    command_Text(f"Saving inverted track... ")
+    command_Text("Saving inverted track... ")
 
     if is_save_aligned or is_spec_match:
         wav1 = match_mono_array_shapes(wav1, wav_sub) if is_mono else match_array_shapes(wav1, wav_sub, is_swap=True)

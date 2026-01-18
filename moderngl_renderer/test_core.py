@@ -8,7 +8,6 @@ No GPU operations in these tests - only data transformations.
 
 import pytest
 import numpy as np
-from typing import Tuple
 
 
 # Tests will drive the design of the functional core

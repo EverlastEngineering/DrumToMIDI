@@ -24,7 +24,7 @@ Usage:
 from pathlib import Path
 import subprocess
 import time
-from typing import Optional, List, Dict, Any
+from typing import Optional
 
 from midi_shell import parse_midi_file
 from midi_types import STANDARD_GM_DRUM_MAP
@@ -33,7 +33,7 @@ from moderngl_renderer.midi_animation import (
     get_visible_notes_at_time,
     calculate_note_y_at_time
 )
-from moderngl_renderer.shell import ModernGLContext, render_rectangles, render_rectangles_no_glow, render_circles, render_transparent_rectangles, blit_texture, read_framebuffer, AsyncFramebufferReader
+from moderngl_renderer.shell import ModernGLContext, render_rectangles_no_glow, render_circles, render_transparent_rectangles, blit_texture, AsyncFramebufferReader
 from moderngl_renderer.midi_video_core import (
     midi_note_to_rectangle,
     create_strike_line_rectangle,

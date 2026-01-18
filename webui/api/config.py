@@ -8,9 +8,8 @@ for projects using the YAMLConfigEngine.
 from flask import Blueprint, jsonify, request
 from pathlib import Path
 import glob
-from typing import Dict, Any, List
 
-from ..config_engine import YAMLConfigEngine, get_config_engine
+from ..config_engine import get_config_engine
 
 config_bp = Blueprint('config', __name__, url_prefix='/api/config')
 
@@ -204,7 +203,7 @@ def update_config(project_id: int, config_type: str):
         
         return jsonify({
             'success': True,
-            'message': f'Configuration saved successfully',
+            'message': 'Configuration saved successfully',
             'updated_count': len(data['updates'])
         })
     
@@ -259,7 +258,7 @@ def reset_config(project_id: int, config_type: str):
         
         return jsonify({
             'success': True,
-            'message': f'Configuration reset to defaults'
+            'message': 'Configuration reset to defaults'
         })
     
     except Exception as e:

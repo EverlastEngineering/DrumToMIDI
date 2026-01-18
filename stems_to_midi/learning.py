@@ -8,7 +8,7 @@ import numpy as np
 import librosa
 import soundfile as sf
 from pathlib import Path
-from typing import Dict, Union, List, Optional
+from typing import Dict, Union, Optional
 import yaml
 import copy
 
@@ -16,15 +16,8 @@ import copy
 from .helpers import (
     ensure_mono,
     calculate_peak_amplitude,
-    calculate_spectral_energies,
-    get_spectral_config_for_stem,
-    calculate_geomean,
-    calculate_sustain_duration,
     analyze_onset_spectral,
-    time_to_sample,
     calculate_threshold_from_distributions,
-    calculate_classification_accuracy,
-    predict_classification,
     analyze_threshold_performance
 )
 
@@ -179,7 +172,7 @@ def learn_threshold_from_midi(
         
         # Show detailed analysis of all hits with predictions
         if all_analysis:
-            print(f"\n      DETAILED ANALYSIS OF ALL DETECTIONS:")
+            print("\n      DETAILED ANALYSIS OF ALL DETECTIONS:")
             
             # Get current config thresholds
             current_geomean_threshold = config.get(stem_type, {}).get('geomean_threshold', 0)
@@ -253,7 +246,7 @@ def learn_threshold_from_midi(
             print(f"\n      Current config accuracy: {current_acc['correct_count']}/{current_acc['total_count']} ({current_acc['accuracy']:.1f}%)")
             print(f"      Suggested threshold accuracy: {suggest_acc['correct_count']}/{suggest_acc['total_count']} ({suggest_acc['accuracy']:.1f}%)")
         
-        print(f"\n    Analysis:")
+        print("\n    Analysis:")
         print(f"      Kept hits - GeoMean range: {min_kept:.1f} - {max(kept_geomeans):.1f}")
         print(f"      Removed hits - GeoMean range: {min(removed_geomeans):.1f} - {max_removed:.1f}")
         print(f"      Suggested GeoMean threshold: {suggested_threshold:.1f}")
@@ -311,4 +304,4 @@ def save_calibrated_config(config: Dict, learned_thresholds: Dict[str, Dict], ou
         yaml.dump(calibrated_config, f, default_flow_style=False, sort_keys=False)
     
     print(f"\n  Saved calibrated config to: {output_path}")
-    print(f"  You can now use this config for production MIDI conversion!")
+    print("  You can now use this config for production MIDI conversion!")

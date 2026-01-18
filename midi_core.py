@@ -9,7 +9,7 @@ File I/O is handled by midi_shell.py.
 """
 
 import mido  # type: ignore
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Any
 from midi_types import MidiNote, DrumNote, MidiSequence, DrumMapDict
 
 

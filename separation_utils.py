@@ -5,9 +5,7 @@ from pathlib import Path
 from typing import Union, Optional, Dict
 import soundfile as sf # type: ignore
 import torch # type: ignore
-import numpy as np
 from mdx23c_utils import load_mdx23c_checkpoint, get_checkpoint_hyperparameters
-from device_utils import detect_best_device
 
 # Try to import optimized MDX processor
 try:
@@ -169,7 +167,7 @@ def process_stems_for_project(
         raise RuntimeError(f'Config file not found: {config_path}')
     
     if wiener_exponent is not None and wiener_exponent <= 0:
-        raise ValueError(f'α-Wiener filter exponent should be positive.')
+        raise ValueError('α-Wiener filter exponent should be positive.')
     
     # Find audio files in project root
     audio_files = [f for f in project_dir.iterdir() 
@@ -226,7 +224,7 @@ def process_stems_for_project(
                 print(f"  Target SR: {target_sr} Hz")
                 print(f"  Overlap: {overlap} (hop={separator.chunk_size//overlap} samples)")
                 if device == "cuda":
-                    print(f"  Mixed Precision: Enabled (fp16)")
+                    print("  Mixed Precision: Enabled (fp16)")
             print("Progress: 10%")
         else:
             # Fallback to original implementation
@@ -239,7 +237,7 @@ def process_stems_for_project(
             instruments = [inst if inst != 'hh' else 'hihat' for inst in config_instruments]
             
             if verbose:
-                print(f"  Model: MDX23C (TFC_TDF_net)")
+                print("  Model: MDX23C (TFC_TDF_net)")
                 print(f"  Chunk size: {chunk_size} samples (~{chunk_size/target_sr:.1f}s)")
                 print(f"  Target SR: {target_sr} Hz")
                 print(f"  Overlap: {overlap} (hop={chunk_size//overlap} samples)")
@@ -283,7 +281,7 @@ def process_stems_for_project(
         
         # Saving phase: 91-100%
         total_stems = len(stems)
-        print(f"Status Update: Saving Stems...")
+        print("Status Update: Saving Stems...")
         for stem_idx, (stem, waveform) in enumerate(stems.items(), 1):
             # Save to stems directory
             save_path = stems_dir / f'{audio_file.stem}-{stem}.wav'

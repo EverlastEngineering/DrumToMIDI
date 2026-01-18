@@ -15,19 +15,13 @@ Usage:
 from pathlib import Path
 import numpy as np # type: ignore
 import soundfile as sf # type: ignore
-from scipy import signal # type: ignore
 import argparse
 import sys
-from typing import Union, Tuple
+from typing import Union
 
 # Import project manager
 from project_manager import (
-    discover_projects,
-    select_project,
-    get_project_by_number,
-    get_project_config,
-    update_project_metadata,
-    USER_FILES_DIR
+    select_project
 )
 
 
@@ -101,15 +95,15 @@ def sidechain_compress(
     # Get envelope of sidechain (snare)
     print(f"Applying sidechain compression with threshold={threshold_db}dB, ratio={ratio}:1")
     sidechain_envelope = envelope_follower(sidechain_audio, sr, attack_ms, release_ms)
-    print(f"Sidechain envelope calculated.")
+    print("Sidechain envelope calculated.")
     # Convert to dB
     epsilon = 1e-10
     sidechain_db = 20 * np.log10(sidechain_envelope + epsilon)
-    print(f"Sidechain envelope converted to dB.")
+    print("Sidechain envelope converted to dB.")
     # Calculate gain reduction
     threshold = threshold_db
     gain_reduction_db = np.zeros_like(sidechain_db)
-    print(f"Status Update: Calculating gain reduction...")
+    print("Status Update: Calculating gain reduction...")
     for i in range(len(sidechain_db)):
         # print(f"Processing sample {i+1}/{len(sidechain_db)}", end='\r')
 
@@ -128,26 +122,26 @@ def sidechain_compress(
             gain_reduction_db[i] = -over_threshold**2 * (1 - 1/ratio) / (4 * knee_db)
         # else: below threshold, no gain reduction
     
-    print(f"Progress: 100%")
-    print(f"Gain reduction calculated.")
+    print("Progress: 100%")
+    print("Gain reduction calculated.")
     # Convert gain reduction to linear
     gain_linear = 10 ** (gain_reduction_db / 20.0)
     
-    print(f"Applying makeup gain...")
+    print("Applying makeup gain...")
     # Apply makeup gain
     makeup_gain_linear = 10 ** (makeup_gain_db / 20.0)
     gain_linear *= makeup_gain_linear
     
-    print(f"Makeup gain applied.")
+    print("Makeup gain applied.")
     # Apply gain reduction to main audio
     if main_audio.ndim == 2:
         # Stereo - apply same gain to both channels
         compressed = main_audio * gain_linear[:, np.newaxis]
-        print(f"Compression applied to stereo audio.")
+        print("Compression applied to stereo audio.")
     else:
         # Mono
         compressed = main_audio * gain_linear
-        print(f"Compression applied to mono audio.")
+        print("Compression applied to mono audio.")
     return compressed
 
 
@@ -198,7 +192,7 @@ def process_stems(
         raise RuntimeError(f"No tracks found with both kick and snare files in {stems_dir}")
     
     print(f"Processing {len(tracks_to_process)} track(s)...")
-    print(f"Settings:")
+    print("Settings:")
     print(f"  Threshold: {threshold_db} dB")
     print(f"  Ratio: {ratio}:1")
     print(f"  Attack: {attack_ms} ms")
@@ -224,7 +218,7 @@ def process_stems(
         snare_audio = snare_audio[:min_length]
         
         # Apply sidechain compression
-        print(f"Status Update: Applying sidechain compression...")
+        print("Status Update: Applying sidechain compression...")
         kick_compressed = sidechain_compress(
             kick_audio,
             snare_audio,
@@ -235,14 +229,14 @@ def process_stems(
             release_ms=release_ms
         )
         
-        print(f"  Sidechain compression applied.")
+        print("  Sidechain compression applied.")
         # Dry/wet mix
         kick_final = dry_wet * kick_compressed + (1 - dry_wet) * kick_audio
         
-        print(f"  Saving cleaned kick track...")
+        print("  Saving cleaned kick track...")
 
-        print(f"Status Update: Saving Files...")
-        print(f"Progress: 0%")
+        print("Status Update: Saving Files...")
+        print("Progress: 0%")
 
         # Save to flat output directory (same structure as input)
         output_file = output_dir / f'{base_name}-kick.wav'
@@ -250,7 +244,7 @@ def process_stems(
         sf.write(str(output_file), kick_final, sr)
         print(f"  Saved: {output_file}")
         
-        print(f"Progress: 20%")
+        print("Progress: 20%")
         
         # Copy other stems unchanged
         total_other_stems = 4  # snare, toms, hihat, cymbals
@@ -266,7 +260,7 @@ def process_stems(
             stem_counter += 1
             print(f"Progress: {stem_counter * 20}%")
 
-    print(f"Status Update: Process complete!")
+    print("Status Update: Process complete!")
     print(f"Stems saved to: {output_dir}")
 
 
@@ -306,9 +300,9 @@ def cleanup_project_stems(
     # Check for stems directory
     stems_dir = project_folder / 'stems'
     if not stems_dir.exists():
-        print(f"❌ No stems directory found in project.")
+        print("❌ No stems directory found in project.")
         print(f"   Expected: {stems_dir}")
-        print(f"   Run separate.py first to generate stems.")
+        print("   Run separate.py first to generate stems.")
         sys.exit(1)
     
     # Create cleaned directory

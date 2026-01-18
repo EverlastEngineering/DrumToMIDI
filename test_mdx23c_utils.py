@@ -133,16 +133,16 @@ if __name__ == "__main__":
         print(f"Checkpoint not found at {ckpt_path}")
         exit(1)
     
-    print(f"\n1. Testing hyperparameter loading...")
+    print("\n1. Testing hyperparameter loading...")
     params = get_checkpoint_hyperparameters(ckpt_path, config_path)
     print(f"   ✓ Loaded config with keys: {list(params.keys())}")
     
-    print(f"\n2. Testing model loading (fast)...")
+    print("\n2. Testing model loading (fast)...")
     model = load_mdx23c_checkpoint(ckpt_path, config_path, device="cpu")
     print(f"   ✓ Loaded model: {type(model).__name__}")
     print(f"   ✓ Model has {sum(p.numel() for p in model.parameters()):,} parameters")
     
-    print(f"\n3. Testing quick inference (1 second)...")
+    print("\n3. Testing quick inference (1 second)...")
     # Use just 1 second for smoke test
     test_size = params['audio']['sample_rate']
     chunk_size = params['audio']['chunk_size']

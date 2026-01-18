@@ -13,7 +13,6 @@ import moderngl
 import numpy as np
 from PIL import Image
 from typing import List, Dict, Any, Optional
-from pathlib import Path
 import time
 from contextlib import contextmanager
 

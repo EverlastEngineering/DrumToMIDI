@@ -23,7 +23,7 @@ Project Structure:
 """
 
 from pathlib import Path
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict
 import json
 import re
 from datetime import datetime
@@ -555,7 +555,7 @@ def select_project(
             print(f"  {p['number']} - {p['name']} (last modified: {last_mod})")
         
         try:
-            choice = input(f"\nSelect project [1]: ").strip()
+            choice = input("\nSelect project [1]: ").strip()
             if not choice:
                 choice = "1"
             selected_num = int(choice)

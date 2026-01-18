@@ -8,8 +8,6 @@ with comment preservation.
 import pytest
 from pathlib import Path
 import tempfile
-import shutil
-from ruamel.yaml import YAML
 
 from webui.config_engine import (
     ConfigField,

@@ -1,0 +1,12 @@
+# Ruff configuration
+# https://docs.astral.sh/ruff/configuration/
+
+# Exclude archived code from linting
+exclude = [
+    "archive/",
+    "__pycache__",
+    ".pytest_cache",
+    "*.egg-info",
+]
+
+line-length = 120

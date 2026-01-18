@@ -5,7 +5,6 @@ Compare PIL vs GPU rendering for the same note
 import sys
 sys.path.insert(0, '/Users/jasoncopp/Source/GitHub/larsnet')
 
-from midi_types import DrumNote
 from midi_render_core import calculate_note_y_position
 
 # Test parameters

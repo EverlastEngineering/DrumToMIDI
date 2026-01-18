@@ -68,9 +68,9 @@ def test_coordinate_flow():
         
         # Describe position
         if y_pixels < 0:
-            print(f"  Position: ABOVE screen (off top)")
+            print("  Position: ABOVE screen (off top)")
         elif y_pixels > height:
-            print(f"  Position: BELOW screen (off bottom)")
+            print("  Position: BELOW screen (off bottom)")
         else:
             pct = (y_pixels / height) * 100
             print(f"  Position: {pct:.1f}% down from top")

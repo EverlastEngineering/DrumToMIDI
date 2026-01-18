@@ -5,14 +5,13 @@ Tests pure functions that process MIDI data.
 No file I/O in these tests - only data transformations.
 """
 
-import pytest
 from midi_core import (
     tempo_to_bpm,
     bpm_to_tempo,
     map_midi_notes_to_drums,
     convert_tempo_map_to_bpm
 )
-from midi_types import MidiNote, DrumNote
+from midi_types import MidiNote
 
 
 class TestTempoConversion:

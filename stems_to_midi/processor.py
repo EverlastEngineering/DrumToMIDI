@@ -13,14 +13,8 @@ from typing import Union, List, Dict, Optional
 from .helpers import (
     ensure_mono,
     calculate_peak_amplitude,
-    calculate_sustain_duration,
-    calculate_spectral_energies,
-    get_spectral_config_for_stem,
-    calculate_geomean,
     should_keep_onset,
-    analyze_onset_spectral,
     filter_onsets_by_spectral,
-    calculate_velocities_from_features,
     normalize_values,
     estimate_velocity,
     classify_tom_pitch
@@ -86,7 +80,7 @@ def _load_and_validate_audio(
     # Convert to mono if configured
     if config['audio']['force_mono'] and audio.ndim == 2:
         audio = ensure_mono(audio)
-        print(f"    Converted stereo to mono")
+        print("    Converted stereo to mono")
 
     # Check if audio is essentially silent
     max_amplitude = np.max(np.abs(audio))
@@ -94,7 +88,7 @@ def _load_and_validate_audio(
 
     silence_threshold = config.get('audio', {}).get('silence_threshold', 0.001)
     if max_amplitude < silence_threshold:
-        print(f"    Audio is silent, skipping...")
+        print("    Audio is silent, skipping...")
         return None, None
 
     return audio, sr
@@ -182,7 +176,7 @@ def _detect_tom_pitches(
     if not enable_pitch:
         return None
     
-    print(f"\n    Detecting tom pitches...")
+    print("\n    Detecting tom pitches...")
     pitch_method = tom_config.get('pitch_method', 'yin')
     min_pitch = tom_config.get('min_pitch_hz', 60.0)
     max_pitch = tom_config.get('max_pitch_hz', 250.0)
@@ -206,7 +200,7 @@ def _detect_tom_pitches(
         print(f"    Detected pitches: min={np.min(valid_pitches):.1f}Hz, max={np.max(valid_pitches):.1f}Hz, mean={np.mean(valid_pitches):.1f}Hz")
         print(f"    Unique pitches: {len(np.unique(valid_pitches))}")
     else:
-        print(f"    Warning: No valid pitches detected, all toms will use default (mid) note")
+        print("    Warning: No valid pitches detected, all toms will use default (mid) note")
     
     # Classify into low/mid/high
     tom_classifications = classify_tom_pitch(detected_pitches)
@@ -478,27 +472,27 @@ def process_stem_to_midi(
             energy_labels = spectral_config['energy_labels'] if spectral_config else {'primary': 'BodyE', 'secondary': 'WireE'}
             stem_config = config.get(stem_type, {})
 
-            print(f"\n      ALL DETECTED ONSETS - SPECTRAL ANALYSIS:")
+            print("\n      ALL DETECTED ONSETS - SPECTRAL ANALYSIS:")
             if geomean_threshold is not None:
                 print(f"      Using GeoMean threshold: {geomean_threshold}")
             else:
-                print(f"      No threshold filtering (showing all detections)")
+                print("      No threshold filtering (showing all detections)")
 
             # Configure labels based on stem type
             if stem_type == 'snare':
-                print(f"      Str=Onset Strength, Amp=Peak Amplitude, BodyE=Body Energy (150-400Hz), WireE=Wire Energy (2-8kHz)")
+                print("      Str=Onset Strength, Amp=Peak Amplitude, BodyE=Body Energy (150-400Hz), WireE=Wire Energy (2-8kHz)")
             elif stem_type == 'kick':
-                print(f"      Str=Onset Strength, Amp=Peak Amplitude, FundE=Fundamental Energy (40-80Hz), BodyE=Body Energy (80-150Hz)")
+                print("      Str=Onset Strength, Amp=Peak Amplitude, FundE=Fundamental Energy (40-80Hz), BodyE=Body Energy (80-150Hz)")
             elif stem_type == 'toms':
-                print(f"      Str=Onset Strength, Amp=Peak Amplitude, FundE=Fundamental Energy (60-150Hz), BodyE=Body Energy (150-400Hz)")
+                print("      Str=Onset Strength, Amp=Peak Amplitude, FundE=Fundamental Energy (60-150Hz), BodyE=Body Energy (150-400Hz)")
             elif stem_type == 'hihat':
-                print(f"      Str=Onset Strength, Amp=Peak Amplitude, BodyE=Body Energy (500-2kHz), SizzleE=Sizzle Energy (6-12kHz), SustainMs=Sustain Duration")
+                print("      Str=Onset Strength, Amp=Peak Amplitude, BodyE=Body Energy (500-2kHz), SizzleE=Sizzle Energy (6-12kHz), SustainMs=Sustain Duration")
                 min_sustain_ms = stem_config.get('min_sustain_ms', 25)
                 print(f"      Minimum sustain duration: {min_sustain_ms}ms (filters out handclap bleed)")
                 open_sustain_ms = stem_config.get('open_sustain_ms', 150)
                 print(f"      Open/Closed threshold: {open_sustain_ms}ms (>={open_sustain_ms}ms = open hihat)")
             elif stem_type == 'cymbals':
-                print(f"      Str=Onset Strength, Amp=Peak Amplitude, BodyE=Body/Wash Energy (1-4kHz), BrillE=Brilliance/Attack Energy (4-10kHz), SustainMs=Sustain Duration")
+                print("      Str=Onset Strength, Amp=Peak Amplitude, BodyE=Body/Wash Energy (1-4kHz), BrillE=Brilliance/Attack Energy (4-10kHz), SustainMs=Sustain Duration")
                 min_sustain_ms = stem_config.get('min_sustain_ms', 50)
                 print(f"      Minimum sustain duration: {min_sustain_ms}ms")
 
@@ -556,7 +550,7 @@ def process_stem_to_midi(
                           f"{data['total_energy']:8.1f} {data['body_wire_geomean']:8.1f} {status:>10s}")
 
             # Show summary statistics
-            print(f"\n      FILTERING SUMMARY:")
+            print("\n      FILTERING SUMMARY:")
             if geomean_threshold is not None:
                 kept_geomeans = [d['body_wire_geomean'] for d in all_onset_data if d['body_wire_geomean'] > geomean_threshold]
                 rejected_geomeans = [d['body_wire_geomean'] for d in all_onset_data if d['body_wire_geomean'] <= geomean_threshold]
@@ -574,7 +568,7 @@ def process_stem_to_midi(
                     badness_threshold = spectral_config.get('badness_threshold', 0.6)
                     stats_params = spectral_config['statistical_params']
                     
-                    print(f"\n        Pass 2 - Statistical Outlier Detection:")
+                    print("\n        Pass 2 - Statistical Outlier Detection:")
                     print(f"        Badness threshold: {badness_threshold} (adjustable in midiconfig.yaml)")
                     print(f"        Median FundE/BodyE ratio: {stats_params['median_ratio']:.3f}")
                     print(f"        Median Total energy: {stats_params['median_total']:.1f}")
@@ -591,7 +585,7 @@ def process_stem_to_midi(
                         if pass2_rejected:
                             print(f"        Pass 2 Rejected Badness range: {min(pass2_rejected):.3f} - {max(pass2_rejected):.3f}")
             else:
-                print(f"        No threshold filtering enabled")
+                print("        No threshold filtering enabled")
                 print(f"        Total onsets detected: {len(all_onset_data)} (all kept)")
                 all_geomeans = [d['body_wire_geomean'] for d in all_onset_data]
                 if all_geomeans:
@@ -606,8 +600,8 @@ def process_stem_to_midi(
             decay_data = decay_analysis['data']
             window_sec = decay_analysis['window_sec']
             
-            print(f"\n      DECAY PATTERN ANALYSIS (Pass 2 - Retriggering Filter):")
-            print(f"      Checks if onset occurs during decay of previous hit")
+            print("\n      DECAY PATTERN ANALYSIS (Pass 2 - Retriggering Filter):")
+            print("      Checks if onset occurs during decay of previous hit")
             print(f"      Window: {window_sec}s, DecayRate=avg energy change (negative=decaying)")
             print(f"\n      {'Time':>8s} {'PrevHit':>8s} {'TimeDiff':>9s} {'DecayRate':>10s} {'Decaying':>9s} {'OwnDecay':>10s} {'Status':>10s}")
             
@@ -633,7 +627,7 @@ def process_stem_to_midi(
             # Show summary
             kept_count = sum(1 for e in decay_data if not e['is_retrigger'])
             rejected_count = sum(1 for e in decay_data if e['is_retrigger'])
-            print(f"\n      DECAY FILTER SUMMARY:")
+            print("\n      DECAY FILTER SUMMARY:")
             print(f"        Decay window: {window_sec}s (adjustable via decay_filter_window_sec)")
             print(f"        Onsets after Pass 1: {len(decay_data)}")
             print(f"        Pass 2 Kept (independent hits): {kept_count}")

@@ -1,5 +1,5 @@
 """
-Sidechain compression to reduce bleed between stems.
+Sidechain compression to reduce bleed between stems - Imperative Shell
 
 Uses the separated snare track as a sidechain trigger to duck the kick track
 when the snare is playing, effectively removing snare bleed from the kick.
@@ -7,17 +7,25 @@ when the snare is playing, effectively removing snare bleed from the kick.
 Uses project-based workflow: automatically detects projects with stems
 and creates cleaned versions in the project/cleaned/ directory.
 
+Architecture: Imperative shell (this file) using functional core (sidechain_core.py)
+
 Usage:
     python sidechain_cleanup.py              # Auto-detect project
     python sidechain_cleanup.py 1            # Process specific project
 """
 
 from pathlib import Path
-import numpy as np # type: ignore
-import soundfile as sf # type: ignore
+import numpy as np  # type: ignore
+import soundfile as sf  # type: ignore
 import argparse
 import sys
 from typing import Union
+
+# Import functional core
+from sidechain_core import (
+    envelope_follower as _envelope_follower,
+    sidechain_compress as _sidechain_compress
+)
 
 # Import project manager
 from project_manager import (
@@ -29,6 +37,8 @@ def envelope_follower(audio: np.ndarray, sr: int, attack_ms: float = 5.0, releas
     """
     Create an envelope follower for the audio signal.
     
+    Wrapper around functional core with no added logging (core is already pure).
+    
     Args:
         audio: Input audio (mono or stereo)
         sr: Sample rate
@@ -38,30 +48,7 @@ def envelope_follower(audio: np.ndarray, sr: int, attack_ms: float = 5.0, releas
     Returns:
         Envelope of the audio signal
     """
-    # Convert to mono if stereo
-    if audio.ndim == 2:
-        audio = np.mean(audio, axis=1)
-    
-    # Get absolute values (rectify)
-    rectified = np.abs(audio)
-    
-    # Calculate coefficients
-    attack_coef = np.exp(-1.0 / (sr * attack_ms / 1000.0))
-    release_coef = np.exp(-1.0 / (sr * release_ms / 1000.0))
-    
-    # Apply envelope follower
-    envelope = np.zeros_like(rectified)
-    envelope[0] = rectified[0]
-    
-    for i in range(1, len(rectified)):
-        if rectified[i] > envelope[i-1]:
-            # Attack
-            envelope[i] = attack_coef * envelope[i-1] + (1 - attack_coef) * rectified[i]
-        else:
-            # Release
-            envelope[i] = release_coef * envelope[i-1] + (1 - release_coef) * rectified[i]
-    
-    return envelope
+    return _envelope_follower(audio, sr, attack_ms, release_ms)
 
 
 def sidechain_compress(
@@ -78,6 +65,8 @@ def sidechain_compress(
     """
     Apply sidechain compression to main audio based on sidechain audio.
     
+    Wrapper around functional core with progress reporting (imperative shell).
+    
     Args:
         main_audio: Audio to be compressed (kick track)
         sidechain_audio: Audio that triggers compression (snare track)
@@ -92,56 +81,26 @@ def sidechain_compress(
     Returns:
         Compressed audio
     """
-    # Get envelope of sidechain (snare)
     print(f"Applying sidechain compression with threshold={threshold_db}dB, ratio={ratio}:1")
-    sidechain_envelope = envelope_follower(sidechain_audio, sr, attack_ms, release_ms)
-    print("Sidechain envelope calculated.")
-    # Convert to dB
-    epsilon = 1e-10
-    sidechain_db = 20 * np.log10(sidechain_envelope + epsilon)
-    print("Sidechain envelope converted to dB.")
-    # Calculate gain reduction
-    threshold = threshold_db
-    gain_reduction_db = np.zeros_like(sidechain_db)
-    print("Status Update: Calculating gain reduction...")
-    for i in range(len(sidechain_db)):
-        # print(f"Processing sample {i+1}/{len(sidechain_db)}", end='\r')
-
-        # Every M samples, print progress converted into percentage
-        if i % 1000000 == 0:
-            progress = (i / len(sidechain_db)) * 100
-            print(f"Progress: {progress:.0f}%")
-
-        if sidechain_db[i] > threshold + knee_db:
-            # Above knee - full compression
-            over_threshold = sidechain_db[i] - threshold
-            gain_reduction_db[i] = -over_threshold * (1 - 1/ratio)
-        elif sidechain_db[i] > threshold - knee_db:
-            # In knee - soft compression
-            over_threshold = sidechain_db[i] - threshold + knee_db
-            gain_reduction_db[i] = -over_threshold**2 * (1 - 1/ratio) / (4 * knee_db)
-        # else: below threshold, no gain reduction
     
-    print("Progress: 100%")
-    print("Gain reduction calculated.")
-    # Convert gain reduction to linear
-    gain_linear = 10 ** (gain_reduction_db / 20.0)
+    # Call functional core (no side effects)
+    compressed, stats = _sidechain_compress(
+        main_audio,
+        sidechain_audio,
+        sr,
+        threshold_db,
+        ratio,
+        attack_ms,
+        release_ms,
+        makeup_gain_db,
+        knee_db
+    )
     
-    print("Applying makeup gain...")
-    # Apply makeup gain
-    makeup_gain_linear = 10 ** (makeup_gain_db / 20.0)
-    gain_linear *= makeup_gain_linear
+    # Report results (imperative shell responsibility)
+    print(f"Compression applied:")
+    print(f"  - Max gain reduction: {stats['max_gain_reduction_db']:.1f} dB")
+    print(f"  - Compressed {stats['compression_percentage']:.1f}% of samples")
     
-    print("Makeup gain applied.")
-    # Apply gain reduction to main audio
-    if main_audio.ndim == 2:
-        # Stereo - apply same gain to both channels
-        compressed = main_audio * gain_linear[:, np.newaxis]
-        print("Compression applied to stereo audio.")
-    else:
-        # Mono
-        compressed = main_audio * gain_linear
-        print("Compression applied to mono audio.")
     return compressed
 
 

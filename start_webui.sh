@@ -12,5 +12,5 @@ fi
 CONDA_ENV=${CONDA_ENV:-larsnet-midi}
 
 echo "Starting web UI (conda env: $CONDA_ENV)..."
-echo "Access at: http://localhost:5001"
+echo "Access at: http://localhost:4915"
 conda run -n "$CONDA_ENV" python -m webui.app

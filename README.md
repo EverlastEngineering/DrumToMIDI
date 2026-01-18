@@ -36,7 +36,7 @@ docker compose up -d
 docker exec -it DrumToMIDI-midi bash
 python -m webui.app
 ```
-Then open http://localhost:49152 in your browser. See [WEBUI_SETUP.md](docs/WEBUI_SETUP.md) for details.
+Then open http://localhost:4915 in your browser. See [WEBUI_SETUP.md](docs/WEBUI_SETUP.md) for details.
 
 **Option 2: Command Line**
 ```bash

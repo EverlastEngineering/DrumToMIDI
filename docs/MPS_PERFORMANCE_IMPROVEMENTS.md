@@ -182,5 +182,5 @@ These items were identified but not implemented due to complexity or low ROI:
 ## References
 
 - [PyTorch MPS Backend Documentation](https://pytorch.org/docs/stable/notes/mps.html)
-- [Performance Plan](./agent-plans/performance.plan.md)
-- [Performance Results](./agent-plans/performance.results.md)
+- [Performance Plan](../agent-plans/performance.plan.md)
+- [Performance Results](../agent-plans/performance.results.md)

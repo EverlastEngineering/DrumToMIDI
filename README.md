@@ -7,7 +7,7 @@ Audio-to-MIDI conversion for drum tracks using deep learning separation, time an
 
 ### Attribution
 
-This project was originally inspired by [LarsNet](LARSNET.md) research for drum source separation. We now use the more modern and effective MDX23C model for stem separation. Many thanks to the LarsNet researchers for their foundational work in this field.
+This project was originally inspired by [LarsNet](docs/LARSNET.md) research for drum source separation. We now use the more modern and effective MDX23C model for stem separation. Many thanks to the LarsNet researchers for their foundational work in this field.
 
 ## Quick Start
 
@@ -18,12 +18,12 @@ For Mac users, native installation provides **7x faster** processing than Docker
 - **Setup Time:** 15-20 minutes
 - **Performance:** 38s for 51.7s audio (sub-realtime!)
 - **GPU:** Automatic Metal acceleration
-- **Guide:** [SETUP_MAC_NATIVE.md](SETUP_MAC_NATIVE.md)
+- **Guide:** [SETUP_MAC_NATIVE.md](docs/SETUP_MAC_NATIVE.md)
 
 #### 🐋 **Docker (Cross-Platform)**
 Universal option that works everywhere:
 - **Mac:** CPU-only (20x slower than native)
-- **Windows:** Add GPU for 10-20x speedup ([SETUP_WINDOWS_GPU.md](SETUP_WINDOWS_GPU.md))
+- **Windows:** Add GPU for 10-20x speedup ([SETUP_WINDOWS_GPU.md](docs/SETUP_WINDOWS_GPU.md))
 - **Linux:** Add GPU for 10-20x speedup
 
 ```bash
@@ -36,7 +36,7 @@ docker compose up -d
 docker exec -it DrumToMIDI-midi bash
 python -m webui.app
 ```
-Then open http://localhost:49152 in your browser. See [WEBUI_SETUP.md](WEBUI_SETUP.md) for details.
+Then open http://localhost:49152 in your browser. See [WEBUI_SETUP.md](docs/WEBUI_SETUP.md) for details.
 
 **Option 2: Command Line**
 ```bash
@@ -111,13 +111,13 @@ Creates Rock Band-style falling notes visualization in an MP4 video. I view this
 
 For deeper details on each part of the pipeline, see:
 
-- [Historical Attribution: LarsNet Research](LARSNET.md)
-- [Sidechain cleanup guide (reduce bleed)](SIDECHAIN_CLEANUP_GUIDE.md)
-- [Stems → MIDI guide](STEMS_TO_MIDI_GUIDE.md)
-- [MIDI visualization (Rock Band-style)](MIDI_VISUALIZATION_GUIDE.md)
-- [Machine learning training guide (calibrate detectors - WIP)](ML_TRAINING_GUIDE.md)
-- [Archived Features: Bayesian Optimization Toolkit](ARCHIVED_FEATURES.md)
-- [Dependency & environment notes](DEPENDENCIES.md)
+- [Historical Attribution: LarsNet Research](docs/LARSNET.md)
+- [Sidechain cleanup guide (reduce bleed)](docs/SIDECHAIN_CLEANUP_GUIDE.md)
+- [Stems → MIDI guide](docs/STEMS_TO_MIDI_GUIDE.md)
+- [MIDI visualization (Rock Band-style)](docs/MIDI_VISUALIZATION_GUIDE.md)
+- [Machine learning training guide (calibrate detectors - WIP)](docs/ML_TRAINING_GUIDE.md)
+- [Archived Features: Bayesian Optimization Toolkit](docs/ARCHIVED_FEATURES.md)
+- [Dependency & environment notes](docs/DEPENDENCIES.md)
 
 ## Development Scripts
 

@@ -153,4 +153,4 @@ For developers working with this feature:
 - **Tests**: `webui/test_api.py` (API tests - 8 test cases)
 - **Documentation**: `WEBUI_API.md`, `WEBUI_SETUP.md`
 
-See [agent-plans/alternate-audio-tracks.plan.md](agent-plans/alternate-audio-tracks.plan.md) for complete implementation plan.
+See [agent-plans/alternate-audio-tracks.plan.md](../agent-plans/alternate-audio-tracks.plan.md) for complete implementation plan.

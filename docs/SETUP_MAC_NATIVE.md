@@ -278,7 +278,7 @@ top -pid $(pgrep -f python)
 If you encounter issues:
 1. Check "Common Issues" section above
 2. Verify all verification tests pass (Step 4)
-3. Check agent-plans/mac-native-mps-support.results.md for known issues
+3. Check ../agent-plans/mac-native-mps-support.results.md for known issues
 4. Report architecture-specific problems with system details:
    - macOS version: `sw_vers`
    - Architecture: `uname -m`

@@ -46,6 +46,17 @@ from midi_render_core import (
     calculate_strike_outline_width
 )
 
+# Import video rendering core functions
+from render_video_core import (
+    pil_to_cv2 as _pil_to_cv2,
+    cv2_to_pil as _cv2_to_pil,
+    draw_rounded_rectangle as _draw_rounded_rectangle,
+    create_cv2_canvas as _create_cv2_canvas,
+    cv2_draw_rounded_rectangle as _cv2_draw_rounded_rectangle,
+    cv2_composite_layer as _cv2_composite_layer,
+    cv2_draw_highlight_circle as _cv2_draw_highlight_circle
+)
+
 # Import project manager
 from project_manager import (
     select_project,
@@ -63,21 +74,12 @@ from project_manager import (
 
 def pil_to_cv2(pil_image: Image.Image) -> np.ndarray:
     """Convert PIL Image (RGBA) to OpenCV array (BGR) with proper alpha compositing"""
-    # If image has alpha channel, composite it onto black background
-    if pil_image.mode == 'RGBA':
-        # Create black background with alpha
-        background = Image.new('RGBA', pil_image.size, (0, 0, 0, 255))
-        # Composite using alpha blending
-        composited = Image.alpha_composite(background, pil_image)
-        # Convert to RGB for OpenCV
-        pil_image = composited.convert('RGB')
-    
-    return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+    return _pil_to_cv2(pil_image)
 
 
 def cv2_to_pil(cv2_image: np.ndarray) -> Image.Image:
     """Convert OpenCV array (BGR) to PIL Image (RGB)"""
-    return Image.fromarray(cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB))
+    return _cv2_to_pil(cv2_image)
 
 
 def draw_rounded_rectangle(draw: ImageDraw.ImageDraw, 
@@ -87,15 +89,7 @@ def draw_rounded_rectangle(draw: ImageDraw.ImageDraw,
                            outline: Optional[Tuple[int, int, int, int]] = None,
                            width: int = 1):
     """Draw anti-aliased rounded rectangle using PIL"""
-    if radius <= 0:
-        if fill:
-            draw.rectangle(xy, fill=fill)
-        if outline:
-            draw.rectangle(xy, outline=outline, width=width)
-        return
-    
-    # Use PIL's built-in rounded rectangle for better anti-aliasing
-    draw.rounded_rectangle(xy, radius=radius, fill=fill, outline=outline, width=width)
+    return _draw_rounded_rectangle(draw, xy, radius, fill, outline, width)
 
 
 # ============================================================================
@@ -114,15 +108,7 @@ def create_cv2_canvas(width: int, height: int, channels: int = 4, fill_color: Tu
     Returns:
         NumPy array ready for cv2 drawing operations
     """
-    if channels == 4:
-        canvas = np.zeros((height, width, 4), dtype=np.uint8)
-        if fill_color:
-            canvas[:] = fill_color
-    else:
-        canvas = np.zeros((height, width, 3), dtype=np.uint8)
-        if fill_color:
-            canvas[:] = fill_color
-    return canvas
+    return _create_cv2_canvas(width, height, channels, fill_color)
 
 
 def cv2_draw_rounded_rectangle(canvas: np.ndarray,
@@ -141,36 +127,7 @@ def cv2_draw_rounded_rectangle(canvas: np.ndarray,
         outline: Outline color (B, G, R) or (B, G, R, A)
         width: Outline width in pixels
     """
-    x1, y1, x2, y2 = xy
-    
-    # For now, use simple rounded corners via circles at corners
-    # More sophisticated implementation can be added later
-    if radius <= 0:
-        # Simple rectangle
-        if fill:
-            cv2.rectangle(canvas, (x1, y1), (x2, y2), fill, -1, cv2.LINE_AA)
-        if outline:
-            cv2.rectangle(canvas, (x1, y1), (x2, y2), outline, width, cv2.LINE_AA)
-        return
-    
-    # Draw filled rounded rectangle using multiple primitives
-    if fill:
-        # Main body rectangles
-        cv2.rectangle(canvas, (x1 + radius, y1), (x2 - radius, y2), fill, -1, cv2.LINE_AA)
-        cv2.rectangle(canvas, (x1, y1 + radius), (x2, y2 - radius), fill, -1, cv2.LINE_AA)
-        
-        # Corner circles
-        cv2.circle(canvas, (x1 + radius, y1 + radius), radius, fill, -1, cv2.LINE_AA)
-        cv2.circle(canvas, (x2 - radius, y1 + radius), radius, fill, -1, cv2.LINE_AA)
-        cv2.circle(canvas, (x1 + radius, y2 - radius), radius, fill, -1, cv2.LINE_AA)
-        cv2.circle(canvas, (x2 - radius, y2 - radius), radius, fill, -1, cv2.LINE_AA)
-    
-    # Draw outline (simplified - just draws regular rounded rect outline)
-    if outline:
-        # For outline, use ellipse arcs at corners
-        # This is a simplified version - can be enhanced later
-        cv2.rectangle(canvas, (x1 + radius, y1), (x2 - radius, y2), outline, width, cv2.LINE_AA)
-        cv2.rectangle(canvas, (x1, y1 + radius), (x2, y2 - radius), outline, width, cv2.LINE_AA)
+    return _cv2_draw_rounded_rectangle(canvas, xy, radius, fill, outline, width)
 
 
 def cv2_composite_layer(base: np.ndarray, overlay: np.ndarray, alpha: float = 1.0) -> None:
@@ -181,24 +138,7 @@ def cv2_composite_layer(base: np.ndarray, overlay: np.ndarray, alpha: float = 1.
         overlay: Overlay canvas (BGRA, 4-channel with alpha)
         alpha: Additional alpha multiplier (0.0 to 1.0)
     """
-    if overlay.shape[2] != 4:
-        # No alpha channel, simple copy
-        if alpha >= 1.0:
-            base[:] = overlay
-        else:
-            cv2.addWeighted(base, 1.0 - alpha, overlay, alpha, 0, base)
-        return
-    
-    # Extract alpha channel and apply multiplier
-    overlay_alpha = (overlay[:, :, 3] / 255.0 * alpha).astype(np.float32)
-    
-    # Expand alpha to match BGR channels
-    overlay_alpha_3ch = np.stack([overlay_alpha] * 3, axis=2)
-    
-    # Alpha blending: base * (1 - alpha) + overlay * alpha
-    # base should be 3-channel BGR, overlay should be 4-channel BGRA
-    base[:, :, :] = (base[:, :, :] * (1 - overlay_alpha_3ch) + 
-                     overlay[:, :, :3] * overlay_alpha_3ch).astype(np.uint8)
+    return _cv2_composite_layer(base, overlay, alpha)
 
 
 def cv2_draw_highlight_circle(canvas: np.ndarray, center_x: int, center_y: int, 
@@ -216,19 +156,7 @@ def cv2_draw_highlight_circle(canvas: np.ndarray, center_x: int, center_y: int,
         pulse: Pulse factor (0.0 to 1.0) for animation
         glow_layers: Ignored (glow disabled for performance)
     """
-    # Convert RGB to BGR for OpenCV
-    bgr_color = (color[2], color[1], color[0])
-    
-    # Main circle - pre-multiply alpha for speed
-    main_color = tuple(int(c * circle_alpha / 255.0) for c in bgr_color)
-    cv2.circle(canvas, (center_x, center_y), int(max_size), 
-               (*main_color, circle_alpha), -1, cv2.LINE_AA)
-    
-    # Bright outline
-    outline_width = int(2 + 2 * pulse)
-    bright_color = tuple(min(255, int(c + (255 - c) * 0.8)) for c in bgr_color)
-    cv2.circle(canvas, (center_x, center_y), int(max_size), 
-               (*bright_color, 255), outline_width, cv2.LINE_AA)
+    return _cv2_draw_highlight_circle(canvas, center_x, center_y, max_size, color, circle_alpha, pulse, glow_layers)
 
 
 # Use shared drum map from midi_types module

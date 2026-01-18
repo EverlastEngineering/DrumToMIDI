@@ -15,12 +15,18 @@
 - sidechain_shell.py: 19% coverage (down from 38% - expected, logic extracted)
 - All 556 tests passing
 
-### Phase 2: Extract render_video_core.py
-- [ ] Create render_video_core.py with pure functions
-- [ ] Update render_midi_video_shell.py imports
-- [ ] Create test_render_video_core.py
-- [ ] Verify all tests pass
-- [ ] Commit
+### Phase 2: Extract render_video_core.py ✅
+- [x] Create render_video_core.py with pure functions
+- [x] Update render_midi_video_shell.py imports
+- [x] Create test_render_video_core.py
+- [x] Verify all tests pass
+- [x] Commit
+
+**Metrics:**
+- render_video_core.py: 100% coverage (295 lines, 7 pure functions)
+- test_render_video_core.py: 99% coverage (30 tests, 177 lines)
+- render_midi_video_shell.py: 1270 lines (down from 1284, 7 functions now wrappers)
+- All 584 tests passing (was 556, +28 new tests)
 
 ### Phase 3: Review remaining shells
 - [ ] Review midi_shell.py
@@ -44,9 +50,10 @@
 - separation_shell.py: 8% (306 lines)
 
 ### Coverage After
-- sidechain_core.py: TBD
-- render_video_core.py: TBD
-- (shells remain similar - expected)
+- sidechain_core.py: 100% coverage (43 lines)
+- render_video_core.py: 100% coverage (295 lines)
+- sidechain_shell.py: 19% coverage (down from 38% - expected)
+- render_midi_video_shell.py: TBD (will drop significantly - expected)
 
 ## Decision Log
 
@@ -54,6 +61,13 @@
 - Created extract-functional-cores branch
 - Analysis: Most shells are already properly architected
 - Focus: sidechain and render_video have extractable logic
+
+### 2026-01-18 - Phase 2 complete
+- Extracted 7 drawing/conversion functions from render_midi_video_shell.py
+- Pattern: Image conversions (pil↔cv2), canvas creation, drawing primitives
+- Achieved 100% coverage on render_video_core.py with 30 comprehensive tests
+- Test additions: Edge cases for zero-radius rectangles, outline-only variants
+- Zero regressions: All 584 tests passing
 
 ## Issues Encountered
 

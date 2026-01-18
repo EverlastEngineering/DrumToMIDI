@@ -63,14 +63,13 @@ def run_stems_to_midi(project_number: int, **kwargs):
     
     This is the actual work function that runs in the job queue.
     """
-    # Import from stems_to_midi.py file using importlib
-    # (stems_to_midi/ package directory shadows the .py file)
+    # Import from stems_to_midi_cli.py file using importlib
     import importlib.util
     import sys
     from pathlib import Path
     
-    # Load stems_to_midi.py explicitly
-    stems_to_midi_path = Path(__file__).parent.parent.parent / "stems_to_midi.py"
+    # Load stems_to_midi_cli.py explicitly
+    stems_to_midi_path = Path(__file__).parent.parent.parent / "stems_to_midi_cli.py"
     spec = importlib.util.spec_from_file_location("stems_to_midi_cli", stems_to_midi_path)
     stems_to_midi_cli = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(stems_to_midi_cli)

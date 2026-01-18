@@ -3,10 +3,13 @@
 Test pure OpenCV rendering speed without PIL conversions.
 
 This skips format conversions to isolate OpenCV performance.
+These are benchmark tests that require specific project data to exist.
 """
 import time
 import numpy as np
 import cv2
+import pytest
+from pathlib import Path
 from render_midi_to_video import (
     create_cv2_canvas,
     cv2_draw_rounded_rectangle,
@@ -14,16 +17,25 @@ from render_midi_to_video import (
     MidiVideoRenderer
 )
 
+
+def _get_project_midi_file(project_id: int, project_name: str = "sdrums"):
+    """Get MIDI file for a project, or None if not found."""
+    project_dir = Path(f"user_files/{project_id} - {project_name}")
+    if not project_dir.exists():
+        return None
+    midi_files = list(project_dir.glob("midi/*.mid"))
+    return midi_files[0] if midi_files else None
+
+
+@pytest.mark.slow
 def test_pure_opencv_rendering(project_id: int = 12, num_frames: int = 300):
     """Time OpenCV drawing operations without PIL conversion overhead"""
-    from pathlib import Path
+    midi_file = _get_project_midi_file(project_id)
+    if midi_file is None:
+        pytest.skip(f"Project {project_id} not found or has no MIDI files")
     
     # Setup renderer
     renderer = MidiVideoRenderer(use_opencv=True)
-    
-    # Find MIDI file
-    project_dir = Path(f"user_files/{project_id} - sdrums")
-    midi_file = list(project_dir.glob("midi/*.mid"))[0]
     
     # Parse MIDI
     notes, total_duration = renderer.parse_midi(str(midi_file))
@@ -105,17 +117,17 @@ def test_pure_opencv_rendering(project_id: int = 12, num_frames: int = 300):
     return total_time, avg_fps
 
 
+@pytest.mark.slow
 def test_pure_pil_rendering(project_id: int = 12, num_frames: int = 300):
     """Time PIL drawing operations for comparison"""
-    from pathlib import Path
     from PIL import Image, ImageDraw
+    
+    midi_file = _get_project_midi_file(project_id)
+    if midi_file is None:
+        pytest.skip(f"Project {project_id} not found or has no MIDI files")
     
     # Setup renderer
     renderer = MidiVideoRenderer(use_opencv=False)
-    
-    # Find MIDI file
-    project_dir = Path(f"user_files/{project_id} - sdrums")
-    midi_file = list(project_dir.glob("midi/*.mid"))[0]
     
     # Parse MIDI
     notes, total_duration = renderer.parse_midi(str(midi_file))

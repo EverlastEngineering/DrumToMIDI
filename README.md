@@ -85,7 +85,7 @@ This optional step removes sound from the kick drum track at the moment a snare 
 
 ### 3. Convert stems to MIDI
 ```bash
-python stems_to_midi.py
+python stems_to_midi_cli.py
 ```
 Detects drum hits in the stem files and converts them to a MIDI track.
 

@@ -7,12 +7,12 @@ and generates MIDI files in the project/midi/ directory.
 Architecture: Modular Design (Functional Core, Imperative Shell)
 - stems_to_midi/ submodules: Core conversion logic
 - project_manager: Project discovery and management
-- stems_to_midi.py (this file): CLI orchestration
+- stems_to_midi_cli.py (this file): CLI orchestration
 
 Usage:
-    python stems_to_midi.py              # Auto-detect project
-    python stems_to_midi.py 1            # Process specific project
-    python stems_to_midi.py --learn      # Learning mode
+    python stems_to_midi_cli.py              # Auto-detect project
+    python stems_to_midi_cli.py 1            # Process specific project
+    python stems_to_midi_cli.py --learn      # Learning mode
 """
 
 from pathlib import Path
@@ -309,10 +309,10 @@ if __name__ == '__main__':
         epilog="""
 Examples:
   # Basic usage - auto-detect project
-  python stems_to_midi.py
+  python stems_to_midi_cli.py
   
   # Process specific project
-  python stems_to_midi.py 1
+  python stems_to_midi_cli.py 1
   
   # More sensitive onset detection
   python stems_to_midi.py -t 0.2

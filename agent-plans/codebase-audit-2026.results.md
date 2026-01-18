@@ -24,8 +24,50 @@
 | 2026-01-18 | Added integration tests | Created end-to-end tests for uncovered modules |
 | 2026-01-18 | Established baseline | 532 tests passing, integration coverage ready |
 | 2026-01-18 | **Phase 1 Complete** | Ruff installed, 64% coverage baseline, retired code removed |
+| 2026-01-18 | **Phase 1.5 Complete** | Dead code audit executed: 376 lines deleted, ~2,500 archived |
 
 ---
+
+## Phase 1.5: Dead Code Audit ✅ COMPLETE
+
+### Task Checklist
+
+- [x] Inventory all Python files - 90 files cataloged
+- [x] Check import usage - Found files never imported
+- [x] Identify demo/benchmark files - 6 root-level utilities found
+- [x] Check coverage at 0% - optimization package (306 lines) identified as dead
+- [x] Create dead code report - [dead-code-audit.md](dead-code-audit.md)
+- [x] Document archived features - Created [ARCHIVED_FEATURES.md](../ARCHIVED_FEATURES.md)
+
+### Findings
+
+**High-Confidence Dead Code (DELETED):**
+- ✅ `moderngl_renderer/demo_midi_project13.py` - project-specific demo
+
+**False Positives (PRESERVED):**
+- ⚠️ `stems_to_midi/optimization/` - 721 lines, 0% coverage, but is production CLI tool
+  - Initially flagged as dead code (not imported by tests)
+  - Actually a user-facing optimization tool: `python -m stems_to_midi.optimization.optimize`
+  - Generated current "LEARNED" threshold values in midiconfig.yaml
+  - **Status**: Kept in codebase, documented in ARCHIVED_FEATURES.md
+
+**Archive Candidates (ARCHIVED):**
+- ✅ 3 benchmark/profile scripts → `archive/benchmarks/`
+- ✅ 1 example script → `archive/examples/`
+- ✅ 3 demo files → `archive/demos/`
+- ✅ 12 debugging scripts → `archive/debugging/debugging_scripts/`
+
+**Cleanup Summary:**
+- Deleted: 70 lines (demo_midi_project13.py only)
+- Archived: ~2,500 lines (preserved for reference)
+- False positive avoided: stems_to_midi/optimization/ (721 lines) kept as production code
+- Created `archive/README.md` documentation
+- Created `ARCHIVED_FEATURES.md` to track archived vs production optimization tools
+- Added `archive/` to `.gitignore`
+- Updated `pytest.ini` to exclude archive from test collection
+- **Tests after cleanup: 530 passed, 8 skipped** ✅
+
+See [dead-code-audit.md](dead-code-audit.md) for full analysis.
 
 ## Phase 2: Test Coverage
 

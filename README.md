@@ -116,6 +116,7 @@ For deeper details on each part of the pipeline, see:
 - [Stems → MIDI guide](STEMS_TO_MIDI_GUIDE.md)
 - [MIDI visualization (Rock Band-style)](MIDI_VISUALIZATION_GUIDE.md)
 - [Machine learning training guide (calibrate detectors - WIP)](ML_TRAINING_GUIDE.md)
+- [Archived Features: Bayesian Optimization Toolkit](ARCHIVED_FEATURES.md)
 - [Dependency & environment notes](DEPENDENCIES.md)
 
 ## Contributing

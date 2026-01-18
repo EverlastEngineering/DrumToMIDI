@@ -2,6 +2,8 @@
 
 This workflow helps you calibrate the spectral filtering thresholds for your specific drum recordings.
 
+> **💡 Advanced Option**: For automated machine learning-based threshold optimization (Bayesian/Grid/Random Search), see [ARCHIVED_FEATURES.md](ARCHIVED_FEATURES.md#threshold-optimization-toolkit). The archived toolkit provides ML algorithms that were used to generate current "LEARNED" values in midiconfig.yaml.
+
 ## Why Use Learning Mode?
 
 Different drum recordings, drum types, and playing styles have different spectral characteristics. Learning mode helps you find the optimal `geomean_threshold` for your recordings by:

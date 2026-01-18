@@ -54,3 +54,7 @@ moderngl_renderer/test_artifacts/
 
 # Environment
 .env
+
+# Coverage
+.coverage
+htmlcov/

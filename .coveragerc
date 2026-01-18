@@ -1,0 +1,6 @@
+[run]
+omit =
+    lib_v5/*
+    archive/*
+    */lib_v5/*
+    */archive/*

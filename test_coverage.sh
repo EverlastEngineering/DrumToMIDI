@@ -9,7 +9,7 @@ if [ -f .env ]; then
 fi
 
 # Default conda environment if not set
-CONDA_ENV=${CONDA_ENV:-larsnet-midi}
+CONDA_ENV=${CONDA_ENV:-drumtomidi}
 
 echo "Running tests with coverage (conda env: $CONDA_ENV)..."
 conda run -n "$CONDA_ENV" pytest --cov=. --cov-report=term-missing --cov-report=html -q

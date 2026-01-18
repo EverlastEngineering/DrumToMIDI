@@ -1,5 +1,5 @@
 """
-LarsNet Web UI Flask Application
+DrumToMIDI Web UI Flask Application
 
 Main application entry point. Configures Flask, registers blueprints,
 and starts the web server.
@@ -131,7 +131,7 @@ def main():
     app = create_app()
     
     print("\n" + "="*60)
-    print(f"LarsNet Web UI v{app.config['APP_VERSION']}")
+    print(f"DrumToMIDI Web UI v{app.config['APP_VERSION']}")
     print("="*60)
     print("\nStarting server at http://0.0.0.0:4915")
     print("\nPress Ctrl+C to stop\n")

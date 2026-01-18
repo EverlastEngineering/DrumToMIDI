@@ -1,4 +1,4 @@
-name: larsnet-midi
+name: drumtomidi
 channels:
   - conda-forge
   - pytorch

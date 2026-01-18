@@ -1,7 +1,7 @@
 """
 Operations API Endpoints
 
-Handles triggering of LarsNet operations (separate, cleanup, MIDI, video).
+Handles triggering of DrumToMIDI operations (separate, cleanup, MIDI, video).
 All operations run asynchronously via the job queue.
 """
 

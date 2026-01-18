@@ -137,7 +137,7 @@ For developers working on the codebase:
 For contributors, several convenience scripts are available:
 
 ```bash
-# Configure your conda environment (optional - defaults to larsnet-midi)
+# Configure your conda environment (optional - defaults to drumtomidi)
 cp .env.example .env
 # Edit .env to set CONDA_ENV=your-env-name
 

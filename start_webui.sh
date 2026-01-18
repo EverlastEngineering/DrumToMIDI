@@ -9,7 +9,7 @@ if [ -f .env ]; then
 fi
 
 # Default conda environment if not set
-CONDA_ENV=${CONDA_ENV:-larsnet-midi}
+CONDA_ENV=${CONDA_ENV:-drumtomidi}
 
 echo "Starting web UI (conda env: $CONDA_ENV)..."
 echo "Access at: http://localhost:4915"

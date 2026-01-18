@@ -1,7 +1,7 @@
 """
-LarsNet Web UI
+DrumToMIDI Web UI
 
-A modern web interface for LarsNet MIDI drum separation and conversion.
+A modern web interface for DrumToMIDI drum separation and conversion.
 Provides project management, file upload, and control over all CLI operations.
 """
 

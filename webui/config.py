@@ -1,7 +1,7 @@
 """
 Flask Application Configuration
 
-Provides configuration settings for the LarsNet Web UI Flask application.
+Provides configuration settings for the DrumToMIDI Web UI Flask application.
 Supports development and production environments.
 """
 

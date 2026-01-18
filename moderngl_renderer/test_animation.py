@@ -134,12 +134,12 @@ class TestNoteVisibilityWindow:
         from moderngl_renderer.animation import is_note_in_window
         
         # Note at time 5.0, current time 3.0, window 3s ahead, 1s behind
-        assert is_note_in_window(5.0, 3.0, 3.0, 1.0) == True  # 2s ahead
-        assert is_note_in_window(2.5, 3.0, 3.0, 1.0) == True  # 0.5s behind
+        assert is_note_in_window(5.0, 3.0, 3.0, 1.0)  # 2s ahead
+        assert is_note_in_window(2.5, 3.0, 3.0, 1.0)  # 0.5s behind
         
         # Outside window
-        assert is_note_in_window(10.0, 3.0, 3.0, 1.0) == False  # Too far ahead
-        assert is_note_in_window(1.0, 3.0, 3.0, 1.0) == False  # Too far behind
+        assert not is_note_in_window(10.0, 3.0, 3.0, 1.0)  # Too far ahead
+        assert not is_note_in_window(1.0, 3.0, 3.0, 1.0)  # Too far behind
 
 
 class TestVelocityMapping:

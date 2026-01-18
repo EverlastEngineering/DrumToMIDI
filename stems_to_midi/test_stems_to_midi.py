@@ -552,7 +552,7 @@ class TestRegression:
         
         # This test documents that cymbals currently DON'T have freq ranges in config
         # They're hardcoded in the Python. After refactoring, this should change.
-        cymbals_config = config.get('cymbals', {})
+        cymbals_config = config.get('cymbals', {})  # noqa: F841
         
         # Currently these are NOT in config (hardcoded as 1000-4000, 4000-10000)
         # After refactoring, these should exist:

@@ -123,7 +123,6 @@ def test_pixel_to_norm_conversions():
         # Note starts 2 seconds before it hits strike line
         # With pixels_per_second = height * 0.4
         pixels_per_second = height * 0.4
-        lookahead_time = 2.0  # seconds
         
         time_positions = [
             ("2.0 sec before hit (far above screen)", -2.0),

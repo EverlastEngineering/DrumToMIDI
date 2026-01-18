@@ -112,7 +112,6 @@ def get_device_info(device: Optional[str] = None, use_cache: bool = True) -> dic
             
             # Check for known MPS capability milestones
             pytorch_major = int(torch.__version__.split('.')[0])
-            pytorch_minor = int(torch.__version__.split('.')[1].split('+')[0])
             # MPS does not support fp16 for audio I/O (soundfile, etc.)
             info['properties']['fp16_support'] = False
             if pytorch_major >= 2:

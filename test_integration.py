@@ -555,7 +555,6 @@ class TestFullPipeline:
         # Step 3: Verify renderer can be initialized for actual rendering
         # (Full video rendering is too slow for integration tests, 
         # but we verify the pipeline components are connected)
-        video_path = video_dir / "test_song.mp4"
         
         # We don't actually render a full video in tests (too slow),
         # but verify the rendering infrastructure is accessible

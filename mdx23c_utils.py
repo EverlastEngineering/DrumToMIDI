@@ -17,6 +17,7 @@ import warnings
 import numpy as np
 import torch
 import yaml
+import lib_v5.tfc_tdf_v3 as TFC_TDF_v3  # type: ignore
 
 # Suppress PyTorch STFT deprecation warning from lib_v5
 # The library uses return_complex=False which is deprecated but still functional
@@ -28,8 +29,6 @@ try:
     import lib_v5.mdxnet as MdxnetSet  # type: ignore
 except ImportError:
     MdxnetSet = None  # type: ignore
-    
-import lib_v5.tfc_tdf_v3 as TFC_TDF_v3  # type: ignore
 
 try:
     import onnxruntime as ort  # optional dependency

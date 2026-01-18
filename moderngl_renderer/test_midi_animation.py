@@ -75,7 +75,7 @@ def test_convert_single_drum_note():
     
     assert anim_note.x == -0.5
     assert anim_note.hit_time == 1.5
-    assert anim_note.is_kick == False
+    assert not anim_note.is_kick
     assert anim_note.velocity == 100
 
 
@@ -98,7 +98,7 @@ def test_convert_kick_drum_note():
         fall_duration=1.5
     )
     
-    assert anim_note.is_kick == True
+    assert anim_note.is_kick
     assert anim_note.width == 2.0  # Full screen width
     assert anim_note.x == 0.0  # Centered
 

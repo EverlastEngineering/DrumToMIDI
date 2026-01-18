@@ -68,7 +68,6 @@ def test_cv2_draw_rounded_rectangle_with_radius():
     
     # Corners should be rounded (not filled at exact corner pixels)
     # This is a rough check - exact pixels depend on implementation
-    corner_filled = canvas[50, 50, 0] > 0
     center_filled = canvas[75, 100, 0] > 0
     assert center_filled  # Center must be filled
     # Corner might or might not be filled depending on radius implementation
@@ -202,8 +201,8 @@ def test_strike_line_rendering_comparison():
     renderer_cv2.note_width = width // 3
     
     # Both should initialize without errors
-    assert renderer_pil.use_opencv == False
-    assert renderer_cv2.use_opencv == True
+    assert not renderer_pil.use_opencv
+    assert renderer_cv2.use_opencv
     
     print("\n✓ Strike line rendering test passed - both modes operational")
 

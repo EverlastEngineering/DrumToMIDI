@@ -27,9 +27,6 @@ def load_labeled_data(csv_path: Path) -> pd.DataFrame:
     labeled_open = df[df['actual_open'] == 'x'].copy()
     labeled_closed = df[df['actual_closed'] == 'x'].copy()
     
-    # Get detected samples (these passed the filter - we assume they're correctly kept)
-    detected = df[(df['detected_closed'] == 'x') | (df['detected_open'] == 'x')].copy()
-    
     # Get rejected samples (these were filtered out - we want to keep most rejected)
     rejected = df[(df['detected_closed'] != 'x') & (df['detected_open'] != 'x')].copy()
     

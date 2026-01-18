@@ -424,7 +424,7 @@ def render_midi_to_video_moderngl(
             process.stdin.close()
             process.terminate()
             process.wait(timeout=5)
-        except:
+        except Exception:
             pass
         raise RuntimeError(f"Rendering failed: {e}")
     

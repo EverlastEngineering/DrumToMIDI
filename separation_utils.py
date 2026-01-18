@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Union, Optional, Dict
 import soundfile as sf # type: ignore
 import torch # type: ignore
+import torchaudio # type: ignore
 from mdx23c_utils import load_mdx23c_checkpoint, get_checkpoint_hyperparameters
 
 # Try to import optimized MDX processor

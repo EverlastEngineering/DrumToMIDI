@@ -168,14 +168,14 @@ class TestNotePositionCalculations:
         from moderngl_renderer.core import is_note_visible
         
         # Note visible if y between -1.0 and 1.0 (normalized coords)
-        assert is_note_visible(0.0) == True
-        assert is_note_visible(0.9) == True
-        assert is_note_visible(-0.9) == True
+        assert is_note_visible(0.0)
+        assert is_note_visible(0.9)
+        assert is_note_visible(-0.9)
         
         # Outside visible range
-        assert is_note_visible(1.1) == False
-        assert is_note_visible(-1.1) == False
-        assert is_note_visible(2.0) == False
+        assert not is_note_visible(1.1)
+        assert not is_note_visible(-1.1)
+        assert not is_note_visible(2.0)
 
 
 class TestLaneCalculations:

@@ -510,7 +510,6 @@ class TestLearnThresholdFromMidi:
         # Create very short audio with a single note at a specific time
         # that will cause onset_frame to be >= len(onset_env)
         sr = 22050
-        hop_length = 512
         # Create audio that's exactly long enough that the onset frame calculation
         # will be at or beyond the onset envelope length
         duration_samples = sr // 4  # 0.25 seconds
@@ -573,7 +572,7 @@ class TestSaveCalibratedConfig:
         assert loaded_config['kick']['geomean_threshold'] == 678.9
         
         # Check learning mode was disabled
-        assert loaded_config['learning_mode']['enabled'] == False
+        assert not loaded_config['learning_mode']['enabled']
     
     def test_save_calibrated_config_preserves_other_settings(self, sample_config, tmp_path):
         """Test that other config settings are preserved."""
@@ -651,7 +650,7 @@ class TestSaveCalibratedConfig:
         assert loaded_config['snare']['geomean_threshold'] == sample_config['snare']['geomean_threshold']
         
         # Learning mode should still be disabled
-        assert loaded_config['learning_mode']['enabled'] == False
+        assert not loaded_config['learning_mode']['enabled']
     
     def test_save_calibrated_config_with_sustain_threshold(self, sample_config, tmp_path):
         """Test saving config with sustain threshold for cymbals."""
@@ -721,7 +720,7 @@ class TestLearningIntegration:
         assert calibrated_config['snare']['geomean_threshold'] == result['geomean_threshold']
         
         # Check that learning mode is disabled
-        assert calibrated_config['learning_mode']['enabled'] == False
+        assert not calibrated_config['learning_mode']['enabled']
         
         # Check that the new threshold is different from original
         assert calibrated_config['snare']['geomean_threshold'] != sample_config['snare']['geomean_threshold']

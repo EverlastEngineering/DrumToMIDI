@@ -24,9 +24,7 @@ from .helpers import (
 from .detection import (
     detect_onsets,
     detect_tom_pitch,
-    classify_tom_pitch,
-    detect_hihat_state,
-    estimate_velocity
+    detect_hihat_state
 )
 
 # Import config structures

@@ -1,9 +1,10 @@
 # Ruff configuration
 # https://docs.astral.sh/ruff/configuration/
 
-# Exclude archived code from linting
+# Exclude archived code and external libraries from linting
 exclude = [
     "archive/",
+    "lib_v5/",  # External MDX model code
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",

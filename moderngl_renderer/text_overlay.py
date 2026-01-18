@@ -72,9 +72,6 @@ def create_lane_labels_overlay(
         
         drums = lane_drums[lane_idx]
         
-        # Calculate lane center X position
-        lane_center_x = (lane_idx + 0.5) * lane_width
-        
         # Start Y position (from top, accounting for progress bar)
         y_pos = int(height * y_start)
         
@@ -85,7 +82,6 @@ def create_lane_labels_overlay(
             
             # Calculate text size
             bbox = draw.textbbox((0, 0), drum_name, font=font)
-            text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
             
             # Left-align text in lane (with small padding from left edge)

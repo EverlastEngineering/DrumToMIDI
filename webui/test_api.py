@@ -335,9 +335,9 @@ class TestJobQueue:
             return "success"
         
         # Submit jobs for different projects
-        job1 = queue.submit('op1', dummy_func, project_id=1)
-        job2 = queue.submit('op2', dummy_func, project_id=2)
-        job3 = queue.submit('op3', dummy_func, project_id=1)
+        _job1 = queue.submit('op1', dummy_func, project_id=1)
+        _job2 = queue.submit('op2', dummy_func, project_id=2)
+        _job3 = queue.submit('op3', dummy_func, project_id=1)
         
         # Get project 1 jobs
         project1_jobs = queue.get_project_jobs(1)

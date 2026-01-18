@@ -200,7 +200,6 @@ def process_stems(
     print(f"  Dry/Wet: {dry_wet * 100:.0f}% processed")
     print()
     
-    total_tracks = len(tracks_to_process)
     for track_idx, (base_name, kick_file, snare_file) in enumerate(tracks_to_process, 1):
         print(f"Processing: {base_name}")
         
@@ -247,7 +246,6 @@ def process_stems(
         print("Progress: 20%")
         
         # Copy other stems unchanged
-        total_other_stems = 4  # snare, toms, hihat, cymbals
         stem_counter = 1
         for stem_name in ['snare', 'toms', 'hihat', 'cymbals']:
             stem_file = stems_dir / f"{base_name}-{stem_name}.wav"

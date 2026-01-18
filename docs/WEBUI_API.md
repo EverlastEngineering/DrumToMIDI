@@ -5,7 +5,7 @@ REST API for the DrumToMIDI web interface. All operations run asynchronously via
 ## Base URL
 
 ```
-http://localhost:49152/api
+http://localhost:4915/api
 ```
 
 ## Response Format
@@ -145,7 +145,7 @@ Upload a new audio file and automatically create a project.
 
 **Example (curl):**
 ```bash
-curl -X POST http://localhost:49152/api/upload \
+curl -X POST http://localhost:4915/api/upload \
   -F "file=@/path/to/drums.wav"
 ```
 
@@ -217,7 +217,7 @@ Upload an alternate audio file (e.g., no-drums mix, mastered version) to a proje
 
 **Example (curl):**
 ```bash
-curl -X POST http://localhost:49152/api/projects/1/upload-alternate-audio \
+curl -X POST http://localhost:4915/api/projects/1/upload-alternate-audio \
   -F "file=@/path/to/no_drums.wav"
 ```
 
@@ -250,7 +250,7 @@ Delete an alternate audio file from a project.
 
 **Example (curl):**
 ```bash
-curl -X DELETE http://localhost:49152/api/projects/1/audio-files/no_drums.wav
+curl -X DELETE http://localhost:4915/api/projects/1/audio-files/no_drums.wav
 ```
 
 **Response:** `200 OK`
@@ -566,7 +566,7 @@ data: {"id": "...", "status": "failed", "error": "Error message"}
 
 **Example (JavaScript):**
 ```javascript
-const eventSource = new EventSource('http://localhost:49152/api/jobs/550e8400-e29b-41d4-a716-446655440000/stream');
+const eventSource = new EventSource('http://localhost:4915/api/jobs/550e8400-e29b-41d4-a716-446655440000/stream');
 
 eventSource.addEventListener('job_update', (e) => {
   const job = JSON.parse(e.data);
@@ -692,14 +692,14 @@ Currently no rate limiting. Future versions may add:
 
 **1. Upload audio file:**
 ```bash
-curl -X POST http://localhost:49152/api/upload \
+curl -X POST http://localhost:4915/api/upload \
   -F "file=@drums.wav"
 # Returns: {"project": {"number": 1, ...}}
 ```
 
 **2. Separate stems:**
 ```bash
-curl -X POST http://localhost:49152/api/separate \
+curl -X POST http://localhost:4915/api/separate \
   -H "Content-Type: application/json" \
   -d '{"project_number": 1, "device": "cpu"}'
 # Returns: {"job_id": "uuid-1"}
@@ -707,13 +707,13 @@ curl -X POST http://localhost:49152/api/separate \
 
 **3. Check job status:**
 ```bash
-curl http://localhost:49152/api/jobs/uuid-1
+curl http://localhost:4915/api/jobs/uuid-1
 # Returns: {"job": {"status": "completed", ...}}
 ```
 
 **4. Convert to MIDI:**
 ```bash
-curl -X POST http://localhost:49152/api/stems-to-midi \
+curl -X POST http://localhost:4915/api/stems-to-midi \
   -H "Content-Type: application/json" \
   -d '{"project_number": 1}'
 # Returns: {"job_id": "uuid-2"}
@@ -721,7 +721,7 @@ curl -X POST http://localhost:49152/api/stems-to-midi \
 
 **5. Render video:**
 ```bash
-curl -X POST http://localhost:49152/api/render-video \
+curl -X POST http://localhost:4915/api/render-video \
   -H "Content-Type: application/json" \
   -d '{"project_number": 1, "fps": 60}'
 # Returns: {"job_id": "uuid-3"}

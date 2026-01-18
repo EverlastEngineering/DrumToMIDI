@@ -54,7 +54,7 @@ Press Ctrl+C to stop
 Open your browser and navigate to:
 
 ```
-http://localhost:49152
+http://localhost:4915
 ```
 
 You should see the DrumToMIDI web interface with:
@@ -176,7 +176,7 @@ docker compose down
 docker compose up -d --build
 ```
 
-### Cannot Access http://localhost:49152
+### Cannot Access http://localhost:4915
 
 **Check 1:** Verify container is running:
 ```bash
@@ -193,7 +193,7 @@ docker exec -it DrumToMIDI-midi bash -c "ps aux | grep python"
 ```bash
 docker port DrumToMIDI-midi
 ```
-Should show: `5000/tcp -> 0.0.0.0:49152`
+Should show: `5000/tcp -> 0.0.0.0:4915`
 
 ### Upload Fails
 
@@ -244,18 +244,18 @@ The web UI is built on a REST API. You can also use it programmatically:
 
 ```bash
 # Upload file
-curl -X POST http://localhost:49152/api/upload \
+curl -X POST http://localhost:4915/api/upload \
   -F "file=@drums.wav"
 # Returns: {"project": {"number": 1, ...}}
 
 # Separate stems
-curl -X POST http://localhost:49152/api/separate \
+curl -X POST http://localhost:4915/api/separate \
   -H "Content-Type: application/json" \
   -d '{"project_number": 1, "device": "cpu"}'
 # Returns: {"job_id": "uuid..."}
 
 # Check status
-curl http://localhost:49152/api/jobs/UUID
+curl http://localhost:4915/api/jobs/UUID
 ```
 
 See [WEBUI_API.md](WEBUI_API.md) for complete API documentation.

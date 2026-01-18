@@ -112,7 +112,7 @@
 - Added comprehensive error handling throughout API layer
 - Wrote complete API documentation (WEBUI_API.md) with examples
 - Created unit test suite with 80%+ coverage target
-- Updated Docker configuration to expose port 49152
+- Updated Docker configuration to expose port 4915
 - Added Flask/Flask-CORS dependencies to environment.yml
 
 ### [Date: 2025-10-20] Phase 3 Config Engine Architecture Decided
@@ -312,6 +312,6 @@ To test the backend:
 2. Enter container: `docker exec -it larsnet-midi bash`
 3. Run tests: `pytest webui/test_api.py -v`
 4. Start server: `python -m webui.app`
-5. Test API: `curl http://localhost:49152/health`
+5. Test API: `curl http://localhost:4915/health`
 
 All tests should pass once Flask dependencies are installed via Docker rebuild.

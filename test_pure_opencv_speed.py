@@ -10,7 +10,7 @@ import numpy as np
 import cv2
 import pytest
 from pathlib import Path
-from render_midi_to_video import (
+from render_midi_video_shell import (
     create_cv2_canvas,
     cv2_draw_highlight_circle,
     MidiVideoRenderer

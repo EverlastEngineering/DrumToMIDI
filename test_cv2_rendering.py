@@ -6,7 +6,7 @@ Validates that OpenCV drawing functions produce visually similar output to PIL.
 import pytest
 import numpy as np
 from PIL import Image, ImageDraw
-from render_midi_to_video import (
+from render_midi_video_shell import (
     create_cv2_canvas,
     cv2_draw_rounded_rectangle,
     cv2_composite_layer,
@@ -186,7 +186,7 @@ def test_cv2_rendering_performance():
 
 def test_strike_line_rendering_comparison():
     """Test that strike line renders similarly with PIL and OpenCV"""
-    from render_midi_to_video import MidiVideoRenderer
+    from render_midi_video_shell import MidiVideoRenderer
     
     width, height = 400, 300
     

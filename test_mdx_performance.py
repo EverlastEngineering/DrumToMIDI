@@ -13,7 +13,7 @@ import numpy as np
 
 from mdx23c_utils import load_mdx23c_checkpoint, get_checkpoint_hyperparameters
 from mdx23c_optimized import OptimizedMDX23CProcessor
-from separation_utils import _process_with_mdx23c
+from separation_shell import _process_with_mdx23c
 
 
 def benchmark_original(audio_path: str, overlap: int = 8, device: str = "cpu"):

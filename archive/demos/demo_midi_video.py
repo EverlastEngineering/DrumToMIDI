@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from moderngl_renderer.midi_video_moderngl import render_midi_to_video_moderngl
+from moderngl_renderer.midi_video_shell import render_midi_to_video_moderngl
     
 
 def main():

@@ -152,7 +152,7 @@ Play the video and follow along with your drum kit or practice pad. The falling 
 
 ### Changing Colors
 
-Edit the `DRUM_MAP` dictionary in `render_midi_to_video.py`:
+Edit the `DRUM_MAP` dictionary in `render_midi_video_shell.py`:
 
 ```python
 DRUM_MAP = {

@@ -14,7 +14,7 @@ import tempfile
 import subprocess
 
 from midi_types import DrumNote, STANDARD_GM_DRUM_MAP
-from moderngl_renderer.midi_video_moderngl import render_midi_to_video_moderngl
+from moderngl_renderer.midi_video_shell import render_midi_to_video_moderngl
 
 
 # ============================================================================

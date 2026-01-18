@@ -43,7 +43,7 @@ def run_cleanup(project_number: int, threshold_db: float = -30.0, ratio: float =
     
     This is the actual work function that runs in the job queue.
     """
-    from sidechain_cleanup import cleanup_project_stems
+    from sidechain_shell import cleanup_project_stems
     
     # cleanup_project_stems takes project_number directly
     cleanup_project_stems(
@@ -98,7 +98,7 @@ def run_render_video(project_number: int, fps: int = 60, width: int = 1920, heig
         fall_speed_multiplier: Note fall speed multiplier (1.0 = default)
         use_moderngl: Use GPU-accelerated ModernGL renderer (default: True on macOS, False otherwise)
     """
-    from render_midi_to_video import render_project_video
+    from render_midi_video_shell import render_project_video
     from project_manager import get_project_by_number, USER_FILES_DIR
     
     # Auto-detect ModernGL on macOS if not explicitly specified
@@ -177,7 +177,7 @@ def separate():
         
         # Auto-detect device if requested
         if device == 'auto':
-            from device_utils import detect_best_device
+            from device_shell import detect_best_device
             device = detect_best_device(verbose=False)
         
         # Validate device

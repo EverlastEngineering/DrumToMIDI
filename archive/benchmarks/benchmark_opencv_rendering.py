@@ -7,7 +7,7 @@ Actually renders videos to measure real-world performance.
 import time
 import sys
 from pathlib import Path
-from render_midi_to_video import render_project_video
+from render_midi_video_shell import render_project_video
 
 def benchmark_render(project_id: int, use_opencv: bool):
     """Benchmark rendering with PIL or OpenCV
@@ -40,7 +40,7 @@ def benchmark_render(project_id: int, use_opencv: bool):
         print("Error: render_project_video needs use_opencv parameter")
         print("Let's render manually instead...")
         
-        from render_midi_to_video import MidiVideoRenderer
+        from render_midi_video_shell import MidiVideoRenderer
         from project_manager import find_project_midi
         
         project_dir = Path(f"user_files/{project_id} - sdrums")

@@ -13,7 +13,7 @@ from io import StringIO
 
 def profile_render(project_id: int = 12, num_seconds: int = 5):
     """Profile rendering of a short video clip"""
-    from render_midi_to_video import MidiVideoRenderer
+    from render_midi_video_shell import MidiVideoRenderer
     
     # Find project files
     project_dir = Path(f"user_files/{project_id} - sdrums")

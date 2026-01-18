@@ -301,8 +301,8 @@ DrumToMIDI/
 │   └── test_*.py           # Tests
 ├── separate.py             # Source separation script
 ├── mdx23c_optimized.py     # MDX23C model
-├── separation_utils.py     # Separation utilities
-├── render_midi_to_video.py # Video visualization
+├── separation_shell.py     # Separation utilities
+├── render_midi_video_shell.py # Video visualization
 ├── midiconfig.yaml         # MIDI conversion config
 ├── environment.yml         # Conda dependencies
 ├── docs/

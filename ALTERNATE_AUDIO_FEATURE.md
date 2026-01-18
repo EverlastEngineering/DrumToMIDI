@@ -148,7 +148,7 @@ The old `include_audio` boolean parameter is deprecated but still works:
 
 For developers working with this feature:
 
-- **Backend**: `webui/api/projects.py` (endpoints), `render_midi_to_video.py` (video rendering)
+- **Backend**: `webui/api/projects.py` (endpoints), `render_midi_video_shell.py` (video rendering)
 - **Frontend**: `webui/templates/index.html` (UI), `webui/static/js/operations.js` (handlers)
 - **Tests**: `webui/test_api.py` (API tests - 8 test cases)
 - **Documentation**: `WEBUI_API.md`, `WEBUI_SETUP.md`

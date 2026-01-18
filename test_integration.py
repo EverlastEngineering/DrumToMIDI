@@ -182,7 +182,7 @@ class TestSidechainCleanup:
     
     def test_envelope_follower_produces_valid_output(self, sample_rate: int):
         """Smoke test: envelope follower produces valid output."""
-        from sidechain_cleanup import envelope_follower
+        from sidechain_shell import envelope_follower
         
         # Create test audio with a transient
         audio = np.zeros(sample_rate)
@@ -196,7 +196,7 @@ class TestSidechainCleanup:
     
     def test_sidechain_compress_reduces_signal(self, sample_rate: int):
         """Property test: sidechain compression reduces main signal when sidechain is loud."""
-        from sidechain_cleanup import sidechain_compress
+        from sidechain_shell import sidechain_compress
         
         # Create main audio (constant)
         main = np.ones((sample_rate, 2), dtype=np.float32) * 0.5
@@ -220,7 +220,7 @@ class TestSidechainCleanup:
         self, test_project_with_stems: Dict[str, Any], sample_rate: int
     ):
         """Integration test: cleanup creates cleaned stem files."""
-        from sidechain_cleanup import sidechain_compress
+        from sidechain_shell import sidechain_compress
         
         project_dir = test_project_with_stems["path"]
         stems_dir = project_dir / "stems"
@@ -437,7 +437,7 @@ class TestVideoRendering:
     @pytest.mark.slow
     def test_frame_rendering(self, test_project_with_stems: Dict[str, Any], drum_mapping):
         """Test that video frames can be rendered."""
-        from render_midi_to_video import MidiVideoRenderer
+        from render_midi_video_shell import MidiVideoRenderer
         from stems_to_midi.processor import process_stem_to_midi
         from stems_to_midi.midi import create_midi_file
         import yaml
@@ -500,7 +500,7 @@ class TestFullPipeline:
         """
         from stems_to_midi.processor import process_stem_to_midi
         from stems_to_midi.midi import create_midi_file
-        from render_midi_to_video import MidiVideoRenderer
+        from render_midi_video_shell import MidiVideoRenderer
         import yaml
         
         project_dir = test_project_with_stems["path"]
@@ -566,9 +566,9 @@ class TestFullPipeline:
         """
         Test pipeline with cleanup step: stems → cleanup → MIDI.
         
-        This tests sidechain_cleanup.py which has 0% coverage.
+        This tests sidechain_shell.py which has 0% coverage.
         """
-        from sidechain_cleanup import sidechain_compress
+        from sidechain_shell import sidechain_compress
         from stems_to_midi.processor import process_stem_to_midi
         from stems_to_midi.midi import create_midi_file
         import yaml

@@ -17,7 +17,7 @@ from contextlib import contextmanager
 import time
 
 from mdx23c_utils import load_mdx23c_checkpoint, get_checkpoint_hyperparameters
-from device_utils import detect_best_device, validate_device
+from device_shell import detect_best_device, validate_device
 
 logger = logging.getLogger(__name__)
 

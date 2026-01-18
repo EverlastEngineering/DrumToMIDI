@@ -11,7 +11,7 @@ Usage:
     python separate.py --overlap 8  # High quality separation (slower)
 """
 
-from separation_utils import process_stems_for_project
+from separation_shell import process_stems_for_project
 from project_manager import (
     find_loose_files,
     create_project,
@@ -21,7 +21,7 @@ from project_manager import (
     update_project_metadata,
     USER_FILES_DIR
 )
-from device_utils import detect_best_device
+from device_shell import detect_best_device
 from pathlib import Path
 from typing import Optional
 import argparse

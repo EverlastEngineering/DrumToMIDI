@@ -42,14 +42,14 @@ We use **Conda** (via `environment.yml`) for dependency management because:
 
 ### Root Scripts
 
-**separation_utils.py**
+**separation_shell.py**
 - torch, torchaudio
 - pyyaml
 - soundfile
 - tqdm
 
-**separate.py, separate_with_eq.py**
-- separation_utils (above dependencies)
+**separate.py**
+- separation_shell (above dependencies)
 
 **stems_to_midi.py**
 - librosa
@@ -58,12 +58,12 @@ We use **Conda** (via `environment.yml`) for dependency management because:
 - mido
 - pyyaml
 
-**render_midi_to_video.py**
+**render_midi_video_shell.py**
 - mido
 - opencv-python-headless (cv2)
 - numpy
 
-**sidechain_cleanup.py**
+**sidechain_shell.py**
 - numpy
 - soundfile
 - scipy

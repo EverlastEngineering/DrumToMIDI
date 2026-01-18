@@ -43,7 +43,7 @@ from moderngl_renderer.midi_video_core import (
     create_progress_bar
 )
 from moderngl_renderer.core import calculate_ending_image_alpha, calculate_ending_image_y_position, calculate_image_dimensions_with_aspect_ratio
-from moderngl_renderer.text_overlay import create_lane_labels_overlay
+from moderngl_renderer.text_overlay_shell import create_lane_labels_overlay
 from PIL import Image
 
 

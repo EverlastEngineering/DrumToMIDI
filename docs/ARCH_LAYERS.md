@@ -129,6 +129,78 @@ class MidiNote:
 - Type checking with mypy
 - Clear contracts between modules
 
+#### Sidechain Core (`sidechain_core.py`) - 100% coverage
+```python
+def envelope_follower(
+    audio: np.ndarray,
+    sr: int,
+    attack_ms: float,
+    release_ms: float
+) -> np.ndarray:
+    """Track audio envelope with attack/release"""
+    
+def calculate_gain_reduction_db(
+    sidechain_db: np.ndarray,
+    threshold: float,
+    ratio: float,
+    knee: float
+) -> np.ndarray:
+    """Calculate compression gain reduction curve"""
+    
+def sidechain_compress(
+    main: np.ndarray,
+    sidechain: np.ndarray,
+    sr: int,
+    threshold: float,
+    ratio: float,
+    attack_ms: float,
+    release_ms: float,
+    knee: float,
+    makeup_gain_db: float
+) -> Tuple[np.ndarray, Dict[str, float]]:
+    """Pure sidechain compression with stats"""
+```
+
+**Why pure?**
+- Numerical DSP algorithms
+- Testable with synthetic signals
+- No audio file I/O needed
+- Deterministic behavior
+- Fast unit tests
+
+#### Render Video Core (`render_video_core.py`) - 100% coverage
+```python
+def pil_to_cv2(pil_image: Image.Image) -> np.ndarray:
+    """Convert PIL Image to OpenCV array with alpha compositing"""
+    
+def cv2_to_pil(cv2_image: np.ndarray) -> Image.Image:
+    """Convert OpenCV array to PIL Image"""
+    
+def cv2_draw_rounded_rectangle(
+    canvas: np.ndarray,
+    xy: Tuple[int, int, int, int],
+    radius: int,
+    fill: Optional[Tuple[int, int, int]] = None,
+    outline: Optional[Tuple[int, int, int]] = None,
+    width: int = 1
+) -> None:
+    """Draw rounded rectangle on canvas (mutates in-place for performance)"""
+    
+def cv2_composite_layer(
+    base: np.ndarray,
+    overlay: np.ndarray,
+    alpha: float = 1.0
+) -> None:
+    """Alpha blend overlay onto base (mutates in-place)"""
+```
+
+**Why pure (with controlled mutation)?**
+- Image format conversions are deterministic
+- Drawing operations testable with synthetic canvases
+- No GPU/OpenGL context needed
+- In-place mutation for performance (functional core with optimization)
+- No file I/O dependencies
+
 ### Testing Functional Cores
 
 ```python
@@ -185,8 +257,88 @@ def separate_audio_file(
 
 **Why shell?**
 - Orchestrates I/O and GPU operations
-- Low unit test coverage acceptable
+- Low unit test coverage acceptable (8%)
 - Tested via integration tests
+
+#### Sidechain Shell (`sidechain_shell.py`) - 19% coverage
+```python
+from sidechain_core import sidechain_compress as _sidechain_compress
+
+def process_sidechain_cleanup(
+    main_path: str,
+    sidechain_path: str,
+    output_path: str,
+    params: SidechainParams
+) -> None:
+    """
+    Side effects:
+    - Read two audio files
+    - Log progress to console
+    - Write processed audio file
+    """
+    # IMPERATIVE: Load files
+    main_audio, sr = soundfile.read(main_path)
+    sidechain_audio, _ = soundfile.read(sidechain_path)
+    
+    # FUNCTIONAL: Process with pure function
+    compressed, stats = _sidechain_compress(
+        main=main_audio,
+        sidechain=sidechain_audio,
+        sr=sr,
+        **params
+    )
+    
+    # IMPERATIVE: Save and log
+    soundfile.write(output_path, compressed, sr)
+    print(f"✓ Reduced by {stats['avg_reduction_db']:.1f}dB")
+```
+
+**Why shell?**
+- File I/O orchestration
+- Console logging for user feedback
+- Thin wrapper around pure core
+- Low coverage expected (19%)
+
+#### Render Video Shell (`render_midi_video_shell.py`) - 15% coverage
+```python
+from render_video_core import (
+    pil_to_cv2 as _pil_to_cv2,
+    cv2_draw_rounded_rectangle as _cv2_draw_rounded_rectangle,
+    cv2_composite_layer as _cv2_composite_layer
+)
+
+class MidiVideoRenderer:
+    def render_frame(self, time: float) -> np.ndarray:
+        """
+        Side effects:
+        - FFmpeg subprocess management
+        - GPU OpenGL rendering
+        - Preview window display
+        """
+        # IMPERATIVE: Allocate resources
+        canvas = self._allocate_canvas()  # GPU/memory
+        
+        # FUNCTIONAL: Draw with pure functions
+        _cv2_draw_rounded_rectangle(canvas, (10, 10, 100, 50), 5, fill=(255, 0, 0))
+        overlay = self._create_overlay()
+        _cv2_composite_layer(canvas, overlay, alpha=0.8)
+        
+        # IMPERATIVE: Write to FFmpeg
+        self.ffmpeg_process.stdin.write(canvas.tobytes())  # I/O
+        
+        # IMPERATIVE: Update preview
+        if self.show_preview:
+            cv2.imshow('Preview', canvas)  # GUI
+        
+        return canvas
+```
+
+**Why shell?**
+- FFmpeg process orchestration
+- OpenGL context management
+- Window display
+- File I/O for video output
+- Low coverage expected (15%)
 
 #### MIDI Shell (`midi_shell.py`) - 78% coverage
 ```python

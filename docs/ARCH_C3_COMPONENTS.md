@@ -38,10 +38,16 @@ graph TB
     
     subgraph "Video Rendering"
         render_shell[render_midi_video_shell.py<br/>Rendering Shell]
+        render_core[render_video_core.py<br/>Drawing Core]
         midi_render_core[midi_render_core.py<br/>Layout Logic]
         moderngl_shell[moderngl_renderer/shell.py<br/>GPU Orchestration]
         moderngl_core[moderngl_renderer/core.py<br/>GPU Primitives]
         animation[moderngl_renderer/animation.py<br/>Animations]
+    end
+    
+    subgraph "Audio Processing"
+        sidechain_shell[sidechain_shell.py<br/>Bleed Cleanup Shell]
+        sidechain_core[sidechain_core.py<br/>Compression Core]
     end
     
     subgraph "Project Management"
@@ -92,12 +98,16 @@ graph TB
     midi_shell --> midi_parser
     
     %% Rendering Dependencies
+    render_shell --> render_core
     render_shell --> midi_shell
     render_shell --> midi_render_core
     render_shell --> moderngl_shell
     moderngl_shell --> moderngl_core
     moderngl_shell --> animation
     midi_render_core --> midi_types
+    
+    %% Audio Processing Dependencies
+    sidechain_shell --> sidechain_core
     
     %% Project Manager Dependencies
     project_mgr --> config_stems
@@ -106,6 +116,8 @@ graph TB
     style midi_core fill:#e1f5fe
     style midi_parser fill:#e1f5fe
     style midi_render_core fill:#e1f5fe
+    style render_core fill:#e1f5fe
+    style sidechain_core fill:#e1f5fe
     style moderngl_core fill:#e1f5fe
     style detection fill:#e1f5fe
     style helpers fill:#e1f5fe
@@ -181,10 +193,16 @@ moderngl_renderer/
 - `mdx23c_utils.py` (47%) - Model loading utilities
 - `device_shell.py` (8%) - GPU management (imperative shell)
 
+#### Video Rendering
+- `render_video_core.py` (100%) - Drawing primitives (functional core)
+- `render_midi_video_shell.py` (15%) - Video rendering orchestration (shell)
+
+#### Audio Processing
+- `sidechain_core.py` (100%) - Compression algorithms (functional core)
+- `sidechain_shell.py` (19%) - Bleed reduction orchestration (shell)
+
 #### Supporting Modules
 - `project_manager.py` (68%) - Project state management
-- `sidechain_shell.py` (38%) - Bleed reduction
-- `render_midi_video_shell.py` (15%) - Video rendering shell
 
 #### CLI Scripts
 - `separate.py` (0%) - Stem separation CLI

@@ -109,6 +109,8 @@ Creates Rock Band-style falling notes visualization in an MP4 video. I view this
 
 # Further Information
 
+## User Guides
+
 For deeper details on each part of the pipeline, see:
 
 - [Historical Attribution: LarsNet Research](docs/LARSNET.md)
@@ -118,6 +120,17 @@ For deeper details on each part of the pipeline, see:
 - [Machine learning training guide (calibrate detectors - WIP)](docs/ML_TRAINING_GUIDE.md)
 - [Archived Features: Bayesian Optimization Toolkit](docs/ARCHIVED_FEATURES.md)
 - [Dependency & environment notes](docs/DEPENDENCIES.md)
+
+## Architecture Documentation
+
+For developers working on the codebase:
+
+- [System Overview (C1)](docs/ARCH_C1_OVERVIEW.md) - User workflows and system context
+- [Containers (C2)](docs/ARCH_C2_CONTAINERS.md) - Application architecture
+- [Components (C3)](docs/ARCH_C3_COMPONENTS.md) - Code structure and modules
+- [Data Flow](docs/ARCH_DATA_FLOW.md) - Audio → MIDI → Video pipeline
+- [Architectural Layers](docs/ARCH_LAYERS.md) - Functional core vs imperative shell
+- [File Reference](docs/ARCH_FILES.md) - Complete directory structure
 
 ## Development Scripts
 

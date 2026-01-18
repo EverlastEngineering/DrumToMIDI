@@ -6,12 +6,13 @@ Quick reference for all files and directories in the project.
 
 ```
 larsnet/
-├── ARCH_*.md              # Architecture documentation
 ├── README.md              # Project overview and quick start
 ├── AGENTS.md              # Instructions for AI agents
 ├── CONTRIBUTING.md        # Development guidelines
 ├── TODO.md                # Project roadmap
-├── docs/                  # User documentation
+├── docs/                  # User and architecture documentation
+│   ├── ARCH_*.md         # Architecture documentation (C4 model)
+│   └── *.md              # User guides
 ├── agent-plans/           # Architecture decision records
 ├── webui/                 # Web application
 ├── stems_to_midi/         # Detection and MIDI conversion
@@ -217,10 +218,16 @@ mdx_models/
 
 ## Documentation: `docs/`
 
-User-facing documentation.
+User-facing and architecture documentation.
 
 ```
 docs/
+├── ARCH_C1_OVERVIEW.md    # System context diagram (C4 Level 1)
+├── ARCH_C2_CONTAINERS.md  # Container diagram (C4 Level 2)
+├── ARCH_C3_COMPONENTS.md  # Component diagram (C4 Level 3)
+├── ARCH_DATA_FLOW.md      # Audio processing pipeline
+├── ARCH_LAYERS.md         # Functional core vs imperative shell
+├── ARCH_FILES.md          # This file - directory reference
 ├── SETUP_MAC_NATIVE.md    # Mac native installation guide
 ├── SETUP_WINDOWS_GPU.md   # Windows GPU setup
 ├── STEMS_TO_MIDI_GUIDE.md # Detection system details

@@ -58,3 +58,9 @@ moderngl_renderer/test_artifacts/
 # Coverage
 .coverage
 htmlcov/
+
+# Installers (should be downloaded by users)
+Miniforge3-*.sh
+Mambaforge-*.sh
+Miniconda-*.sh
+Anaconda-*.sh

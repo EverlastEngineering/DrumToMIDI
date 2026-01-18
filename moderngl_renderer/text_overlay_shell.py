@@ -4,7 +4,7 @@ Text Overlay Generation - Functional Core
 Pure functions for generating text overlays (lane labels).
 Renders text using PIL, returns PIL Image with alpha channel.
 
-The imperative shell (midi_video_moderngl.py) handles uploading to GPU texture.
+The imperative shell (midi_video_shell.py) handles uploading to GPU texture.
 """
 
 from typing import Dict, List, Tuple

@@ -41,7 +41,7 @@ The ModernGL renderer strictly separates pure logic (functional core) from side 
   - File I/O
   - **Tested with:** Level 1 & 2 integration tests (test_shell.py)
   
-- **`midi_video_moderngl.py`** - High-level video rendering
+- **`midi_video_shell.py`** - High-level video rendering
   - MIDI file loading
   - FFmpeg process management
   - Frame-by-frame rendering loop
@@ -72,7 +72,7 @@ For each frame:
   ↓
   Video Frame (numpy array)
   ↓
-FFmpeg encode [midi_video_moderngl.py - I/O]
+FFmpeg encode [midi_video_shell.py - I/O]
   ↓
 Output Video File
 ```
@@ -174,7 +174,7 @@ y_opengl = y_top - height  # Converted in core.py
 ### New Note Effect (e.g., trail)
 1. **Functional core** (`midi_video_core.py`): Add calculation functions
 2. **Tests**: Unit test the calculations
-3. **Shell integration** (`midi_video_moderngl.py`): Call new functions
+3. **Shell integration** (`midi_video_shell.py`): Call new functions
 4. **Verify**: Run existing tests (should still pass)
 
 ## Performance Characteristics

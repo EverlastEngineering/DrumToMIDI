@@ -1,7 +1,7 @@
 """
 Tests for MIDI Video Renderer - Imperative Shell
 
-Level 1 & 2 integration tests for midi_video_moderngl.py.
+Level 1 & 2 integration tests for midi_video_shell.py.
 Tests the full rendering pipeline without mocking.
 
 Note: These are integration tests that exercise GPU, FFmpeg, and file I/O.

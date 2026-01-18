@@ -75,7 +75,7 @@ moderngl_renderer/
 ├── test_midi_video_core.py      # 100% unit test coverage
 ├── shell.py                     # GPU operations (shaders here)
 ├── test_shell.py                # Level 1 & 2 integration tests
-├── midi_video_moderngl.py       # Video rendering pipeline
+├── midi_video_shell.py          # Video rendering pipeline
 ├── test_midi_video_moderngl.py  # Level 1 & 2 integration tests
 └── test_visual_quality.py       # Level 3 regression tests
 ```

@@ -9,7 +9,7 @@ Architecture:
 - Imperative shell: This file (GPU rendering, FFmpeg encoding, I/O)
 
 Usage:
-    from moderngl_renderer.midi_video_moderngl import render_midi_to_video_moderngl
+    from moderngl_renderer.midi_video_shell import render_midi_to_video_moderngl
     
     render_midi_to_video_moderngl(
         midi_path="path/to/file.mid",

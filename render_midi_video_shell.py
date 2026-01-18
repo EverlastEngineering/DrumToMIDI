@@ -1008,7 +1008,7 @@ def render_project_video(
     
     # Use ModernGL GPU renderer if requested
     if use_moderngl:
-        from moderngl_renderer.midi_video_moderngl import render_midi_to_video_moderngl
+        from moderngl_renderer.midi_video_shell import render_midi_to_video_moderngl
         
         # Find MIDI files in project/midi/ directory
         midi_dir = project_dir / "midi"

@@ -3,3 +3,29 @@ IMPORTANT:
 When you complete a task, simply say "Done!" - do not provide summaries, explanations, or lists of changes made. The user can see what you did through the tool calls and test results.
 Do not make summary documents after completing tasks.
 Before taking action that the user might want to pause, just stop and ask to continue. Any blank response there would be taken as permission to proceed.
+
+## Architecture Documentation Maintenance
+
+When making significant changes to the codebase structure, update the relevant ARCH_*.md files:
+
+- **ARCH_C1_OVERVIEW.md**: Add new user workflows, update system context diagram
+- **ARCH_C2_CONTAINERS.md**: Add/remove major application components
+- **ARCH_C3_COMPONENTS.md**: Update package structure, module dependencies, coverage stats
+- **ARCH_DATA_FLOW.md**: Modify data transformation stages if pipeline changes
+- **ARCH_LAYERS.md**: Document new functional cores or imperative shells
+- **ARCH_FILES.md**: Update file/folder listings when structure changes
+
+**When to update**:
+- Adding new packages or major modules
+- Restructuring code organization
+- Changing architectural patterns
+- After significant refactoring work
+- When coverage numbers shift significantly
+
+**How to update**:
+- Prefer incremental updates over full rewrites
+- Update mermaid diagrams when relationships change
+- Keep file listings current (consider running `tree` or similar)
+- Verify cross-references between ARCH_*.md files remain valid
+
+**Note**: These files are designed for LLM context windows - keep them focused and scannable.

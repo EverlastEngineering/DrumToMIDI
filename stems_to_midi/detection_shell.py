@@ -17,7 +17,7 @@ import numpy as np
 import librosa
 
 # Import functional core helpers
-from .helpers import (
+from .analysis_core import (
     ensure_mono,
     calculate_sustain_duration,
     estimate_velocity,

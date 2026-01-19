@@ -12,8 +12,8 @@ from typing import Dict, Union, Optional
 import yaml
 import copy
 
-# Import functional core helpers
-from .helpers import (
+# Import functional core
+from .analysis_core import (
     ensure_mono,
     calculate_peak_amplitude,
     analyze_onset_spectral,

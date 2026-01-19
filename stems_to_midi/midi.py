@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Union, Optional
 
 # Import helper function for event preparation
-from .helpers import prepare_midi_events_for_writing
+from .analysis_core import prepare_midi_events_for_writing
 
 __all__ = [
     'create_midi_file',

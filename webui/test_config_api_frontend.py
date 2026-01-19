@@ -9,7 +9,7 @@ and that the API properly validates and saves updates.
 import pytest
 import json
 from webui.app import create_app
-from webui.config_engine import YAMLConfigEngine
+from webui.yaml_config_core import YAMLConfigEngine
 
 
 # Sample midiconfig mimicking real structure

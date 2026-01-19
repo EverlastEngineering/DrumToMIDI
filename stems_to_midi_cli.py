@@ -23,7 +23,7 @@ import sys
 # Import modules (thin orchestration layer)
 from stems_to_midi.config import DrumMapping
 from stems_to_midi.midi import create_midi_file
-from stems_to_midi.processor import process_stem_to_midi
+from stems_to_midi.processing_shell import process_stem_to_midi
 
 # Import project manager
 from project_manager import (

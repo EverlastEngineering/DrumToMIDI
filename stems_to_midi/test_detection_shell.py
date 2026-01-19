@@ -8,7 +8,7 @@ import pytest
 import numpy as np
 from unittest.mock import patch
 
-from stems_to_midi.detection import (
+from stems_to_midi.detection_shell import (
     detect_onsets,
     detect_tom_pitch,
     detect_hihat_state
@@ -124,7 +124,7 @@ class TestDetectTomPitch:
         audio = np.sin(2 * np.pi * freq * t) * 0.5
         
         # Mock librosa.yin to raise an exception
-        with patch('stems_to_midi.detection.librosa.yin', side_effect=Exception("YIN failed")):
+        with patch('stems_to_midi.detection_shell.librosa.yin', side_effect=Exception("YIN failed")):
             pitch = detect_tom_pitch(audio, sr, onset_time=0.0, method='yin')
             
             # Should fall back to spectral peak detection
@@ -142,7 +142,7 @@ class TestDetectTomPitch:
         audio = np.sin(2 * np.pi * freq * t) * 0.5
         
         # Mock librosa.yin to raise an exception
-        with patch('stems_to_midi.detection.librosa.yin', side_effect=Exception("YIN failed")):
+        with patch('stems_to_midi.detection_shell.librosa.yin', side_effect=Exception("YIN failed")):
             pitch = detect_tom_pitch(
                 audio, sr, onset_time=0.0, method='yin',
                 min_hz=60.0, max_hz=250.0
@@ -160,7 +160,7 @@ class TestDetectTomPitch:
         audio = np.zeros(int(sr * duration))
         
         # Mock librosa.yin to raise an exception
-        with patch('stems_to_midi.detection.librosa.yin', side_effect=Exception("YIN failed")):
+        with patch('stems_to_midi.detection_shell.librosa.yin', side_effect=Exception("YIN failed")):
             pitch = detect_tom_pitch(
                 audio, sr, onset_time=0.0, method='yin',
                 min_hz=60.0, max_hz=250.0

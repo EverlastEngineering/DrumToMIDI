@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Union, List, Dict, Optional
 
 # Import functional core helpers
-from .helpers import (
+from .analysis_core import (
     ensure_mono,
     calculate_peak_amplitude,
     should_keep_onset,
@@ -21,7 +21,7 @@ from .helpers import (
 )
 
 # Import detection functions
-from .detection import (
+from .detection_shell import (
     detect_onsets,
     detect_tom_pitch,
     detect_hihat_state

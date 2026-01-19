@@ -211,7 +211,7 @@ kick:
     
     def test_full_workflow(self, mock_project_dir):
         """Test complete workflow: load, update, validate, save"""
-        from webui.config_engine import YAMLConfigEngine
+        from webui.yaml_config_core import YAMLConfigEngine
         
         config_file = mock_project_dir / "config.yaml"
         engine = YAMLConfigEngine(config_file)

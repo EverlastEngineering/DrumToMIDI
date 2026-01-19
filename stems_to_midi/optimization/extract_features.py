@@ -20,8 +20,8 @@ import numpy as np
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from stems_to_midi.detection import detect_onsets, detect_hihat_state
-from stems_to_midi.helpers import (
+from stems_to_midi.detection_shell import detect_onsets, detect_hihat_state
+from stems_to_midi.analysis_core import (
     ensure_mono,
     calculate_peak_amplitude,
     filter_onsets_by_spectral,

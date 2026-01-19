@@ -275,7 +275,7 @@ class TestStemsToMidi:
     
     def test_midi_file_created(self, test_project_with_stems: Dict[str, Any], drum_mapping):
         """Integration test: MIDI file is created from stems."""
-        from stems_to_midi.processor import process_stem_to_midi
+        from stems_to_midi.processing_shell import process_stem_to_midi
         from stems_to_midi.midi import create_midi_file
         import yaml
         
@@ -326,7 +326,7 @@ class TestStemsToMidi:
     
     def test_multiple_stems_combined(self, test_project_with_stems: Dict[str, Any], drum_mapping):
         """Integration test: multiple stems produce combined MIDI."""
-        from stems_to_midi.processor import process_stem_to_midi
+        from stems_to_midi.processing_shell import process_stem_to_midi
         from stems_to_midi.midi import create_midi_file
         import yaml
         
@@ -388,7 +388,7 @@ class TestVideoRendering:
         from midi_types import STANDARD_GM_DRUM_MAP
         
         # First create a MIDI file
-        from stems_to_midi.processor import process_stem_to_midi
+        from stems_to_midi.processing_shell import process_stem_to_midi
         from stems_to_midi.midi import create_midi_file
         import yaml
         
@@ -438,7 +438,7 @@ class TestVideoRendering:
     def test_frame_rendering(self, test_project_with_stems: Dict[str, Any], drum_mapping):
         """Test that video frames can be rendered."""
         from render_midi_video_shell import MidiVideoRenderer
-        from stems_to_midi.processor import process_stem_to_midi
+        from stems_to_midi.processing_shell import process_stem_to_midi
         from stems_to_midi.midi import create_midi_file
         import yaml
         
@@ -498,7 +498,7 @@ class TestFullPipeline:
         This is the primary integration test to verify refactoring doesn't break
         the main workflow.
         """
-        from stems_to_midi.processor import process_stem_to_midi
+        from stems_to_midi.processing_shell import process_stem_to_midi
         from stems_to_midi.midi import create_midi_file
         from render_midi_video_shell import MidiVideoRenderer
         import yaml
@@ -569,7 +569,7 @@ class TestFullPipeline:
         This tests sidechain_shell.py which has 0% coverage.
         """
         from sidechain_shell import sidechain_compress
-        from stems_to_midi.processor import process_stem_to_midi
+        from stems_to_midi.processing_shell import process_stem_to_midi
         from stems_to_midi.midi import create_midi_file
         import yaml
         import soundfile as sf

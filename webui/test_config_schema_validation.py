@@ -8,7 +8,7 @@ dictionary values with primitives, corrupting the YAML structure.
 import pytest
 import tempfile
 from pathlib import Path
-from webui.config_engine import YAMLConfigEngine
+from webui.yaml_config_core import YAMLConfigEngine
 from webui.config_schema import validate_structure, MIDICONFIG_SCHEMA
 
 

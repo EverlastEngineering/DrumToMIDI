@@ -9,7 +9,7 @@ from flask import Blueprint, jsonify, request
 from pathlib import Path
 import glob
 
-from ..config_engine import get_config_engine
+from ..yaml_config_core import get_config_engine
 
 config_bp = Blueprint('config', __name__, url_prefix='/api/config')
 

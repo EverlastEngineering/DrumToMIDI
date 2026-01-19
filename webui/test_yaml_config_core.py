@@ -9,7 +9,7 @@ import pytest
 from pathlib import Path
 import tempfile
 
-from webui.config_engine import (
+from webui.yaml_config_core import (
     ConfigField,
     ConfigSection,
     ValidationRule,

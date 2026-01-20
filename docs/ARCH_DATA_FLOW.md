@@ -301,14 +301,7 @@ output.mp4
 
 ## Configuration Files
 
-### `config.yaml` (Project-level)
-```yaml
-bpm: 120.0
-time_signature: "4/4"
-use_sidechain_cleanup: true
-```
-
-### `midiconfig.yaml` (Detection thresholds)
+### `midiconfig.yaml` (MIDI conversion settings)
 ```yaml
 drums:
   kick:

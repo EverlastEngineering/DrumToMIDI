@@ -203,7 +203,6 @@ async function startMidi() {
 The advanced settings button in MIDI panel will allow editing project-specific YAML files:
 - `midiconfig.yaml` - Per-stem detection and filtering
 - `eq.yaml` - Per-stem frequency filtering
-- `config.yaml` - Global audio processing parameters
 
 Changes will be saved to the project directory and persist for that project only.
 

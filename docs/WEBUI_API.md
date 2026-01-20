@@ -108,13 +108,13 @@ Get detailed information about a specific project including all files.
 
 ### Get Project Configuration
 
-Get contents of a project's configuration file (config.yaml, midiconfig.yaml, or eq.yaml).
+Get contents of a project's configuration file (midiconfig.yaml or eq.yaml).
 
 **Endpoint:** `GET /api/projects/:project_number/config/:config_name`
 
 **Parameters:**
 - `project_number` (path, integer): Project number
-- `config_name` (path, string): One of: `config.yaml`, `midiconfig.yaml`, `eq.yaml`
+- `config_name` (path, string): One of: `midiconfig.yaml`, `eq.yaml`
 
 **Response:** `200 OK`
 ```json

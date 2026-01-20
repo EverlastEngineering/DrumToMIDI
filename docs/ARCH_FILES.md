@@ -24,8 +24,7 @@ larsnet/
 ├── *.py                   # Core modules and CLI scripts
 ├── test_*.py              # Unit tests
 ├── *.sh                   # Development convenience scripts
-├── config.yaml            # Project-level configuration
-├── midiconfig*.yaml       # Detection threshold presets
+├── midiconfig*.yaml       # MIDI conversion configuration
 ├── environment.yml        # Conda environment definition
 ├── pytest.ini             # Test configuration
 ├── ruff.toml              # Linter configuration
@@ -205,8 +204,7 @@ mdx_models/
 
 | File | Purpose |
 |------|---------|
-| `config.yaml` | Project-level settings (BPM, time signature) |
-| `midiconfig.yaml` | Default detection thresholds |
+| `midiconfig.yaml` | MIDI conversion settings (onset detection, spectral filtering) |
 | `midiconfig_calibrated.yaml` | Optimized thresholds from learning |
 | `environment.yml` | Conda environment definition |
 | `conda-lock.yml` | Locked dependency versions |
@@ -336,7 +334,7 @@ user_files/
 └── <project_name>/        # Created at runtime
     ├── drums.wav          # Original audio
     ├── separated_stems/   # 5 stem files
-    ├── config.yaml        # Project config
+    ├── midiconfig.yaml    # MIDI conversion config
     ├── output.mid         # Generated MIDI
     └── output.mp4         # Visualization video
 ```

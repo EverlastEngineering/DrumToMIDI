@@ -135,7 +135,6 @@ def test_project(temp_user_files: Path, synthetic_audio: np.ndarray, sample_rate
     
     # Copy config files
     root_dir = Path(__file__).parent
-    shutil.copy(root_dir / "config.yaml", project_dir / "config.yaml")
     shutil.copy(root_dir / "midiconfig.yaml", project_dir / "midiconfig.yaml")
     
     return {

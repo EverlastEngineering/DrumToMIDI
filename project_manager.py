@@ -13,7 +13,6 @@ Project Structure:
     user_files/
     └── 1 - song name/
         ├── .drumtomidi_project.json    # Metadata
-        ├── config.yaml              # Project-specific model config (optional)
         ├── midiconfig.yaml          # Project-specific MIDI config (optional)
         ├── song name.wav            # Original audio
         ├── stems/                   # Separated stems
@@ -40,7 +39,6 @@ PROJECT_METADATA_FILE = ".drumtomidi_project.json"
 
 # Root config files to copy to projects
 ROOT_CONFIGS = {
-    "config.yaml": "config.yaml",
     "midiconfig.yaml": "midiconfig.yaml"
 }
 
@@ -171,7 +169,6 @@ def validate_project_structure(project_dir: Path) -> Dict[str, bool]:
     """
     return {
         "has_metadata": (project_dir / PROJECT_METADATA_FILE).exists(),
-        "has_config": (project_dir / "config.yaml").exists(),
         "has_midiconfig": (project_dir / "midiconfig.yaml").exists(),
         "has_audio": any(is_audio_file(f) for f in project_dir.iterdir() if f.is_file()),
         "has_stems": (project_dir / "stems").exists(),

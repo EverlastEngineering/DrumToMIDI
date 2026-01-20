@@ -21,7 +21,7 @@ def get_config(project_id: int, config_type: str):
     
     Args:
         project_id: Project number
-        config_type: One of 'config', 'midiconfig', or 'eq'
+        config_type: One of 'midiconfig' or 'eq'
     
     Returns:
         JSON with sections and fields for UI rendering

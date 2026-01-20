@@ -149,7 +149,6 @@ def process_stems_for_project(
     Args:
         project_dir: Path to project directory
         stems_dir: Path to stems output directory (project/stems/)
-        config_path: Path to config.yaml (project-specific or root)
         model: Separation model ('mdx23c' currently supported, extensible for future models)
         overlap: Overlap value for MDX23C (2-50, higher=better quality but slower)
         wiener_exponent: Reserved for future model use (not used by MDX23C)
@@ -159,13 +158,9 @@ def process_stems_for_project(
     """
     project_dir = Path(project_dir)
     stems_dir = Path(stems_dir)
-    config_path = Path(config_path)
     
     if not project_dir.exists():
         raise RuntimeError(f'Project directory not found: {project_dir}')
-    
-    if not config_path.exists():
-        raise RuntimeError(f'Config file not found: {config_path}')
     
     if wiener_exponent is not None and wiener_exponent <= 0:
         raise ValueError('α-Wiener filter exponent should be positive.')

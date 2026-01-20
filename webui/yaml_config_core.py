@@ -216,7 +216,7 @@ class YAMLConfigEngine:
         
         Args:
             yaml_path: Path to YAML configuration file
-            config_type: Type of config ('midiconfig', 'config', 'eq') for schema validation
+            config_type: Type of config ('midiconfig', 'eq') for schema validation
         """
         self.yaml_path = Path(yaml_path)
         self.yaml = YAML()
@@ -228,7 +228,7 @@ class YAMLConfigEngine:
         # Infer config_type from filename if not provided
         if config_type is None:
             filename = self.yaml_path.stem  # Gets filename without extension
-            config_type = filename if filename in ['config', 'eq', 'midiconfig'] else 'midiconfig'
+            config_type = filename if filename in ['eq', 'midiconfig'] else 'midiconfig'
         self.config_type = config_type
         
         # Load schema, with fallback to empty dict if schema not found

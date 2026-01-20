@@ -22,18 +22,6 @@ MIDICONFIG_SCHEMA = {
     'learning_mode': True,  # Dict containing learning mode settings
 }
 
-CONFIG_SCHEMA = {
-    'global': True,  # Dict containing global settings
-    'audio': True,  # Dict containing audio settings
-    'separation': True,  # Dict containing separation settings
-    'kick': True,  # Dict containing kick settings
-    'snare': True,  # Dict containing snare settings
-    'hihat': True,  # Dict containing hihat settings
-    'cymbals': True,  # Dict containing cymbal settings
-    'toms': True,  # Dict containing tom settings
-    # Add more as needed
-}
-
 EQ_SCHEMA = {
     # EQ schema - typically flat structure with band definitions
     # Add as needed
@@ -55,7 +43,6 @@ def get_schema(config_type: str) -> Dict[str, bool]:
     """
     schemas = {
         'midiconfig': MIDICONFIG_SCHEMA,
-        'config': CONFIG_SCHEMA,
         'eq': EQ_SCHEMA,
     }
     

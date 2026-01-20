@@ -19,8 +19,7 @@ class TestSeparateIntegration:
         user_files.mkdir()
         
         # Create root configs
-        (tmp_path / "config.yaml").write_text("# Mock config for testing")
-        (tmp_path / "midiconfig.yaml").write_text("# Mock MIDI config")
+        (tmp_path / "midiconfig.yaml").write_text("# Mock MIDI config for testing")
         
         return {
             "root": tmp_path,
@@ -40,7 +39,7 @@ class TestSeparateIntegration:
         assert project["number"] == 1
         assert project["name"] == "test_song"
         assert (project["path"] / "test_song.wav").exists()
-        assert (project["path"] / "config.yaml").exists()
+        assert (project["path"] / "midiconfig.yaml").exists()
         assert (project["path"] / "stems").is_dir()
         
     def test_separation_workflow_preparation(self, temp_env):
@@ -57,6 +56,6 @@ class TestSeparateIntegration:
         assert stems_dir.is_dir()
         
         # Verify config is accessible
-        config = project["path"] / "config.yaml"
+        config = project["path"] / "midiconfig.yaml"
         assert config.exists()
-        assert "Mock config for testing" in config.read_text()
+        assert "Mock MIDI config for testing" in config.read_text()

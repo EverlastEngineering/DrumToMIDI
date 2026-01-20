@@ -184,7 +184,7 @@ def get_project_config(project_number, config_name):
     
     Args:
         project_number: Project number
-        config_name: Config file name (config.yaml, midiconfig.yaml, eq.yaml)
+        config_name: Config file name (midiconfig.yaml)
         
     Returns:
         200: Config file contents as YAML
@@ -194,7 +194,7 @@ def get_project_config(project_number, config_name):
     """
     try:
         # Validate config name
-        allowed_configs = ['config.yaml', 'midiconfig.yaml']
+        allowed_configs = ['midiconfig.yaml']
         if config_name not in allowed_configs:
             return jsonify({
                 'error': 'Invalid config name',

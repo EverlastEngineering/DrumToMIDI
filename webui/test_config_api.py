@@ -204,7 +204,7 @@ kick:
   midi_note: 36  # MIDI note
   threshold: 0.5  # Threshold (0-1)
 """
-        config_file = project_dir / "config.yaml"
+        config_file = project_dir / "midiconfig.yaml"
         config_file.write_text(config_content)
         
         return project_dir
@@ -213,7 +213,7 @@ kick:
         """Test complete workflow: load, update, validate, save"""
         from webui.yaml_config_core import YAMLConfigEngine
         
-        config_file = mock_project_dir / "config.yaml"
+        config_file = mock_project_dir / "midiconfig.yaml"
         engine = YAMLConfigEngine(config_file)
         
         # 1. Parse config

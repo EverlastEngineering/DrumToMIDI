@@ -53,13 +53,8 @@ def separate_project(
     print(f"Processing Project {project['number']}: {project['name']}")
     print(f"{'='*60}\n")
     
-    # Get project-specific config
-    config_path = get_project_config(project_dir, "config.yaml")
-    if config_path is None:
-        print("ERROR: config.yaml not found in project or root directory")
-        sys.exit(1)
-    
-    print(f"Using config: {config_path}")
+    # MDX23C uses its own config file in mdx_models/
+    # No project-specific separation config needed
     
     # Input: project directory (original audio file)
     # Output: project/stems/ subdirectory
@@ -69,7 +64,6 @@ def separate_project(
     process_stems_for_project(
         project_dir=project_dir,
         stems_dir=stems_dir,
-        config_path=config_path,
         model=model,
         overlap=overlap,
         wiener_exponent=wiener_exponent,

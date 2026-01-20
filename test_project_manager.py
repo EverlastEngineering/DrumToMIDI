@@ -87,7 +87,7 @@ class TestPureFunctions:
         assert is_audio_file(Path("song.aif")) is True
         
         assert is_audio_file(Path("readme.txt")) is False
-        assert is_audio_file(Path("config.yaml")) is False
+        assert is_audio_file(Path("midiconfig.yaml")) is False
         assert is_audio_file(Path("song.mp4")) is False
     
     def test_create_project_metadata(self):
@@ -143,7 +143,6 @@ class TestImperativeShell:
     @pytest.fixture
     def root_configs(self, temp_dir):
         """Create mock root config files."""
-        (temp_dir / "config.yaml").write_text("# Mock config")
         (temp_dir / "midiconfig.yaml").write_text("# Mock MIDI config")
         return temp_dir
     
@@ -224,10 +223,8 @@ class TestImperativeShell:
         
         results = copy_configs_to_project(project_dir, root_configs)
         
-        assert results["config.yaml"] is True
         assert results["midiconfig.yaml"] is True
         
-        assert (project_dir / "config.yaml").exists()
         assert (project_dir / "midiconfig.yaml").exists()
     
     def test_copy_configs_skips_existing(self, temp_dir, root_configs):
@@ -235,13 +232,13 @@ class TestImperativeShell:
         project_dir.mkdir()
         
         # Create existing config
-        (project_dir / "config.yaml").write_text("# Existing")
+        (project_dir / "midiconfig.yaml").write_text("# Existing")
         
         results = copy_configs_to_project(project_dir, root_configs)
         
         # Should still report success for existing file
-        assert results["config.yaml"] is True
-        assert (project_dir / "config.yaml").read_text() == "# Existing"
+        assert results["midiconfig.yaml"] is True
+        assert (project_dir / "midiconfig.yaml").read_text() == "# Existing"
     
     def test_create_project_success(self, user_files_dir, temp_dir, root_configs):
         # Create audio file in user_files root
@@ -263,7 +260,6 @@ class TestImperativeShell:
         assert (project["path"] / PROJECT_METADATA_FILE).exists()
         
         # Check configs copied
-        assert (project["path"] / "config.yaml").exists()
         assert (project["path"] / "midiconfig.yaml").exists()
         
         # Check subdirectories created
@@ -458,7 +454,7 @@ class TestIntegration:
         
         # 4. Verify project structure
         assert (project["path"] / "my_song.wav").exists()
-        assert (project["path"] / "config.yaml").exists()
+        assert (project["path"] / "midiconfig.yaml").exists()
         assert (project["path"] / "stems").is_dir()
         
         # 5. No more loose files

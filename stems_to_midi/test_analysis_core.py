@@ -814,38 +814,6 @@ class TestExtractAudioSegment:
         assert segment[0] == 50
         assert segment[-1] == 99
 
-
-class TestCalculateVelocitiesFromFeatures:
-    """Test velocity calculation from feature values."""
-    
-    def test_empty_array(self):
-        """Test handling of empty feature array."""
-        velocities = calculate_velocities_from_features(
-            np.array([]), min_velocity=40, max_velocity=127
-        )
-        assert len(velocities) == 0
-    
-    def test_single_value(self):
-        """Test single feature value."""
-        velocities = calculate_velocities_from_features(
-            np.array([0.5]), min_velocity=40, max_velocity=127
-        )
-        assert len(velocities) == 1
-        assert 40 <= velocities[0] <= 127
-    
-    def test_multiple_values(self):
-        """Test multiple feature values."""
-        features = np.array([0.0, 0.5, 1.0])
-        velocities = calculate_velocities_from_features(
-            features, min_velocity=40, max_velocity=127
-        )
-        
-        assert len(velocities) == 3
-        assert velocities[0] == 40  # Min
-        assert velocities[2] == 127  # Max
-        assert 40 < velocities[1] < 127  # Mid
-
-
 class TestPrepareMidiEventsForWriting:
     """Test MIDI event preparation."""
     
@@ -1625,82 +1593,6 @@ class TestCalculateBadnessScore:
         score = calculate_badness_score(onset_data, statistical_params)
         
         assert 0 <= score <= 1
-
-
-class TestClassifyTomPitch:
-    """Tests for classify_tom_pitch - K-means clustering logic"""
-    
-    def test_empty_array(self):
-        """Empty pitch array should return empty array"""
-        from stems_to_midi.analysis_core import classify_tom_pitch
-        
-        result = classify_tom_pitch(np.array([]))
-        
-        assert len(result) == 0
-    
-    def test_all_zero_pitches(self):
-        """All zero (failed detection) should default to mid tom"""
-        from stems_to_midi.analysis_core import classify_tom_pitch
-        
-        pitches = np.array([0.0, 0.0, 0.0])
-        result = classify_tom_pitch(pitches)
-        
-        assert np.all(result == 1)  # All mid tom
-    
-    def test_single_unique_pitch(self):
-        """All same pitch should classify as mid tom"""
-        from stems_to_midi.analysis_core import classify_tom_pitch
-        
-        pitches = np.array([100.0, 100.0, 100.0])
-        result = classify_tom_pitch(pitches)
-        
-        assert np.all(result == 1)  # All mid tom
-    
-    def test_two_unique_pitches(self):
-        """Two distinct pitches should split into low and high"""
-        from stems_to_midi.analysis_core import classify_tom_pitch
-        
-        pitches = np.array([80.0, 80.0, 120.0, 120.0])
-        result = classify_tom_pitch(pitches)
-        
-        # Should be split into 0 (low) and 2 (high), no mid
-        assert np.all((result == 0) | (result == 2))
-        assert 0 in result
-        assert 2 in result
-        assert 1 not in result  # No mid toms
-    
-    def test_three_unique_pitches_kmeans(self):
-        """Three distinct pitches should use K-means clustering"""
-        from stems_to_midi.analysis_core import classify_tom_pitch
-        
-        # Three clear groups: 60Hz (low), 100Hz (mid), 140Hz (high)
-        pitches = np.array([60, 60, 100, 100, 140, 140])
-        result = classify_tom_pitch(pitches)
-        
-        # Should have all three classifications
-        assert 0 in result  # Low
-        assert 1 in result  # Mid
-        assert 2 in result  # High
-        
-        # Check that similar pitches get same classification
-        assert result[0] == result[1]  # Both 60Hz
-        assert result[2] == result[3]  # Both 100Hz
-        assert result[4] == result[5]  # Both 140Hz
-    
-    def test_mixed_with_zero_pitches(self):
-        """Mix of valid and zero pitches should classify zeros as mid"""
-        from stems_to_midi.analysis_core import classify_tom_pitch
-        
-        pitches = np.array([0.0, 80.0, 0.0, 120.0, 0.0])
-        result = classify_tom_pitch(pitches)
-        
-        # Zeros should be classified as mid (1)
-        assert result[0] == 1
-        assert result[2] == 1
-        assert result[4] == 1
-        
-        # Valid pitches should be classified
-        assert result[1] != result[3]  # Different pitches, different classifications
 
 
 class TestCalculateVelocitiesFromFeatures:

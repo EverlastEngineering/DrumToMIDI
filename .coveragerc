@@ -4,3 +4,12 @@ omit =
     archive/*
     */lib_v5/*
     */archive/*
+    config*.py
+    # Shell modules (imperative, tested via integration tests)
+     *_shell.py
+     moderngl_renderer/shell.py
+    # CLI entry points
+    stems_to_midi_cli.py
+    # WebUI (tested manually)
+    webui/*
+    */webui/*

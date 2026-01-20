@@ -97,7 +97,7 @@ def sidechain_compress(
     )
     
     # Report results (imperative shell responsibility)
-    print(f"Compression applied:")
+    print("Compression applied:")
     print(f"  - Max gain reduction: {stats['max_gain_reduction_db']:.1f} dB")
     print(f"  - Compressed {stats['compression_percentage']:.1f}% of samples")
     

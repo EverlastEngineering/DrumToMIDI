@@ -8,7 +8,6 @@ Aims for 95%+ coverage with fast, deterministic tests.
 import pytest
 import numpy as np
 from PIL import Image, ImageDraw
-import cv2
 from render_video_core import (
     pil_to_cv2,
     cv2_to_pil,

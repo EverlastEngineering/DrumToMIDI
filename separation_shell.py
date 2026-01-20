@@ -130,7 +130,6 @@ def _process_with_mdx23c(
 def process_stems_for_project(
     project_dir: Path,
     stems_dir: Path,
-    config_path: Union[str, Path],
     model: str = 'mdx23c',
     overlap: int = 8,
     wiener_exponent: Optional[float] = None,
